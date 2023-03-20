@@ -1,3 +1,4 @@
+6.3
 Classes Game, GameLevel, Tile, Troop, UI and Action added.
 Everything necessary for the operation of the GUI is implemented in them.
 
@@ -7,3 +8,7 @@ as interactions between classes aren't very complex at the moment.
 No difficult errors have occurred yet.
 
 The amount of work has been about 25 hours, and I'm on pace with the project plan at the moment.
+
+20.3
+The project hasn't progressed, because I was on a trip for a week, and
+I have been busy with other school work.
