@@ -12,6 +12,7 @@ class MenuElement(val name: String, elementCoords: (Double, Double), width: Int,
 abstract class UI(xPos: Int, yPos: Int) extends Pane:
   val elementWidth: Int
   val elementHeight: Int
+  val menuElements: Vector[MenuElement]
   def createMenuElement(n: Int, name: String) =
     val bg = new Rectangle:
       width = elementWidth
@@ -32,3 +33,13 @@ object TroopMenu extends UI(1000, 200):
   val elementWidth = 200
   val elementHeight = 70
   val menuElements = Vector(createMenuElement(0, "Move"), createMenuElement(1, "Attack"), createMenuElement(2, "Wait"))
+
+object TroopAttackMenu extends UI(1000, 200):
+  val elementWidth = 200
+  val elementHeight = 70
+  val menuElements = Vector(createMenuElement(0, "Attack"), createMenuElement(1, "Wait"))
+
+class AdvanceTurn(xPos: Int, yPos: Int) extends UI(xPos, yPos):
+  val elementWidth = 300
+  val elementHeight = 50
+  val menuElements = Vector(createMenuElement(0, "Advance Turn"))

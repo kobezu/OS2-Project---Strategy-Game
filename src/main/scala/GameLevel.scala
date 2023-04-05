@@ -2,7 +2,7 @@ import scala.collection.mutable.Buffer
 
 class GameLevel(numGrid: Vector[Vector[Int]]):
 
-  val troops = Buffer[Troop](Solider((3, 4)),Solider((6, 5)))
+  val troops = Buffer[Troop](Solider(Red, (3, 4)),Solider(Red, (6, 5)),Solider(Blue, (7, 5)))
 
   def numberToTile(number: Int, gridCoords: (Int, Int)): Tile =
     number match

@@ -16,6 +16,7 @@ object GameApp extends JFXApp3:
   val game = Game()
   //resolution of tile
   val tileRes = 48
+  val infoArea = 50
   //convert scene coords to grid coords
   def sceneToGridCoords(x:Double, y: Double): (Int, Int) = ((x/tileRes).toInt, (y/tileRes).toInt)
   //convert grid coords to scene coords
@@ -26,11 +27,14 @@ object GameApp extends JFXApp3:
   def getTroopImage(troopId: String) = Image(FileInputStream("images\\troops\\" + troopId + ".png"))
 
   def start(): Unit =
+    val mapWidth = tileRes * game.gameLevel.gridWidth
+    val mapHeight = tileRes * game.gameLevel.gridHeight
+
     stage = new JFXApp3.PrimaryStage:
       title = "Game App"
       //makes window size equal to grid size
-      width = tileRes * game.gameLevel.gridWidth + 16
-      height = tileRes * game.gameLevel.gridHeight + 39
+      width = mapWidth + 16
+      height = mapHeight + infoArea + 39
 
     val root = Pane()
     val scene = Scene(parent = root)
@@ -45,6 +49,12 @@ object GameApp extends JFXApp3:
     root.children += highlights
     root.children += troops
     root.children += userInterface
+    val popUp = Pane()
+    val static = Pane()
+    userInterface.children += popUp
+    userInterface.children += static
+    val advanceTurnBtn = AdvanceTurn(mapWidth-300, mapHeight)
+    static.children += advanceTurnBtn
 
     //highlights tile in given grid coords
     def highlightTile(gridCoords: (Int, Int), color: Color) =
@@ -55,6 +65,17 @@ object GameApp extends JFXApp3:
         height = tileRes
         fill = color.opacity(0.3)
       highlights.children += rectangle
+
+    //refreshes all troop imageView-objects
+    def refreshTroopImages() =
+      troops.children.clear()
+      for troop <- game.gameLevel.troops do
+        val imageView = new ImageView()
+        imageView.setImage(getTroopImage(troop.id))
+        imageView.setX(gridToSceneCoordX(troop.gridCoords))
+        imageView.setY(gridToSceneCoordY(troop.gridCoords))
+        troop.imageViewIndex = troops.children.size //saves troop's imageView-index
+        troops.children += imageView
 
     def renderGameLevel() =
       //render tiles in gameLevel
@@ -74,66 +95,99 @@ object GameApp extends JFXApp3:
       //render troops in gameLevel
       for troop <- game.gameLevel.troops do
         game.gameLevel.tileAt(troop.gridCoords).moveTo(troop) // saves troop to tile at it's grid coordinates
-        val imageView = new ImageView()
-        imageView.setImage(getTroopImage(troop.id))
-        imageView.setX(gridToSceneCoordX(troop.gridCoords))
-        imageView.setY(gridToSceneCoordY(troop.gridCoords))
-        troop.imageViewIndex = troops.children.size //saves troop's imageView-index
-        troops.children += imageView
+        refreshTroopImages()
     end renderGameLevel
 
     //listens for mouse clicks and then does things according to the mouse position and what is current action
     def handleInput() =
       root.onMouseClicked = event => {
-        val gridCoords = sceneToGridCoords(event.getX, event.getY)
-        val clickedTile = game.gameLevel.tileAt(gridCoords)
-        game.currentAction match
-          //makes clicked tile the focus
-          case NoFocus() | TileFocus(_) =>
-            highlights.children.clear()
-            highlightTile(gridCoords, Black)
-            if clickedTile.troop.nonEmpty then
-              userInterface.children += TroopMenu
-              game.currentAction = TroopFocus(clickedTile)
-            else
-              game.currentAction = TileFocus(clickedTile)
+        if event.getY < mapHeight then
+          val gridCoords = sceneToGridCoords(event.getX, event.getY)
+          val clickedTile = game.gameLevel.tileAt(gridCoords)
+          game.currentAction match
+            //makes clicked tile the focus
+            case NoFocus() | TileFocus(_) =>
+              highlights.children.clear()
+              highlightTile(gridCoords, Black)
+              val clickedTroop = clickedTile.troop
+              //check if clicked tile contains non-exhausted troop acting player controls
+              if clickedTroop.nonEmpty && !clickedTroop.get.exhausted && clickedTroop.get.controller == game.gameState.actingPlayer then
+                game.currentAction = TroopFocus(clickedTile)
+                if clickedTile.troop.get.hasMoved then
+                  addPopUp(TroopAttackMenu)
+                else
+                  addPopUp(TroopMenu)
+              else
+                game.currentAction = TileFocus(clickedTile)
 
-          //changes current action based on what menu element was clicked
-          case TroopFocus(activeTile) =>
-            val activeTroop = activeTile.troop.get
-            TroopMenu.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
-              case Some(menuElement) =>
-                menuElement.name match
-                  case "Move" =>
-                    game.currentAction = Moving(activeTile)
-                    troopMoveRange(activeTroop).foreach(highlightTile(_, LightBlue))
-                  case "Attack" =>
-                    println("attack")
-                    removeFocus()
-                  case "Wait" =>
-                    removeFocus()
-                    println("wait")
-              case None => removeFocus()
-              userInterface.children.remove(0)
+            //changes current action based on what menu element was clicked
+            case TroopFocus(activeTile) =>
+              val activeTroop = activeTile.troop.get
+              val currentUI =
+                if activeTroop.hasMoved then
+                  TroopAttackMenu
+                else TroopMenu
+              currentUI.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
+                case Some(menuElement) =>
+                  popUp.children.clear()
+                  menuElement.name match
+                    case "Move" =>
+                      game.currentAction = Moving(activeTile)
+                      troopMoveRange(activeTroop).foreach(highlightTile(_, LightBlue))
+                    case "Attack" =>
+                      game.currentAction = Attacking(activeTile)
+                      troopAttackRange(activeTroop).foreach(highlightTile(_, Red))
+                    case "Wait" =>
+                      removeFocus()
+                      activeTroop.exhaust()
+                case None => removeFocus()
 
-          //moves active troop if the tile clicked is legal for movement
-          case Moving(activeTile) =>
-            removeFocus()
-            val movingTroop = activeTile.troop.get
-            if troopMoveRange(movingTroop).contains(gridCoords) && clickedTile.isPassable then
-              movingTroop.move(gridCoords) //updates moving troop's coords
-              clickedTile.moveTo(movingTroop) //stores troop to the new tile
-              activeTile.moveFrom() //removes troop from the old tile
-              //renders troop's position change
-              troops.children(movingTroop.imageViewIndex)
-                .relocate(gridToSceneCoordX(movingTroop.gridCoords), gridToSceneCoordY(movingTroop.gridCoords))
-      }
+            //moves active troop if the tile clicked is legal for movement
+            case Moving(activeTile) =>
+              val movingTroop = activeTile.troop.get
+              if troopMoveRange(movingTroop).contains(gridCoords) && clickedTile.isPassable then
+                movingTroop.move(gridCoords) //updates moving troop's coords
+                clickedTile.moveTo(movingTroop) //stores troop to the new tile
+                activeTile.removeTroop() //removes troop from the old tile
+                //renders troop's position change
+                troops.children(movingTroop.imageViewIndex)
+                  .relocate(gridToSceneCoordX(movingTroop.gridCoords), gridToSceneCoordY(movingTroop.gridCoords))
+              removeFocus()
+
+            case Attacking(activeTile) =>
+              val attackingTroop = activeTile.troop.get
+              val target = clickedTile.troop
+              //check if clicked tile is in range and contains enemy troop
+              if troopAttackRange(attackingTroop).contains(gridCoords) && target.nonEmpty && target.get.controller != game.gameState.actingPlayer then
+                attackingTroop.attack(target.get)
+                if target.get.hp <= 0 then
+                  removeTroop(target.get, clickedTile)
+              removeFocus()
+        else
+          if advanceTurnBtn.menuElements.exists(_.tryClickMenuElement((event.getX, event.getY))) then
+            game.gameState.advanceTurn()
+            game.gameLevel.troops.foreach(_.refresh())
+        }
       def removeFocus() =
         highlights.children.clear()
         game.currentAction = NoFocus()
+        popUp.children.clear()
+
+      def addPopUp(menu: UI) =
+        popUp.children.clear()
+        popUp.children += menu
 
       def troopMoveRange(troop: Troop) =
         game.gameLevel.coordsAtRange(troop.gridCoords, troop.movement)
+
+      def troopAttackRange(troop: Troop) =
+        game.gameLevel.coordsAtRange(troop.gridCoords, troop.range)
+
+      //remove troop from game
+      def removeTroop(troop: Troop, tile: Tile) =
+        game.gameLevel.troops.remove(game.gameLevel.troops.indexOf(troop))
+        tile.removeTroop()
+        refreshTroopImages()
     end handleInput
 
 

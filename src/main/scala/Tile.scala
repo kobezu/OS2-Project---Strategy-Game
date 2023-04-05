@@ -10,7 +10,7 @@ trait Tile(val id: String, gridCoords: (Int, Int)):
     //addModifier(movingTroop)
     isPassable = false
 
-  def moveFrom(): Unit =
+  def removeTroop(): Unit =
     //removeModifier(troop.get)
     troop = None
     isPassable = true
