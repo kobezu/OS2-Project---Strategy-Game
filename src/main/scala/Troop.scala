@@ -31,7 +31,7 @@ trait Troop(val id: String, owner: Player, initialCoords: (Int, Int)):
   def refresh() =
     hasMoved = false
     exhausted = false
-
+    
   /*
   val resistance: Tile
 

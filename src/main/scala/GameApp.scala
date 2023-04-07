@@ -24,7 +24,7 @@ object GameApp extends JFXApp3:
   def gridToSceneCoordY(gridCoords: (Int, Int)) = gridCoords._2 * tileRes
   //get tile and troop images
   def getTileImage(tileId: String) = Image(FileInputStream("images\\tiles\\" + tileId + ".png"))
-  def getTroopImage(troopId: String) = Image(FileInputStream("images\\troops\\" + troopId + ".png"))
+  def getTroopImage(troop: Troop) = Image(FileInputStream("images\\troops\\" + troop.id + "_" + troop.controller.toString.toLowerCase + ".png"))
 
   def start(): Unit =
     val mapWidth = tileRes * game.gameLevel.gridWidth
@@ -49,12 +49,17 @@ object GameApp extends JFXApp3:
     root.children += highlights
     root.children += troops
     root.children += userInterface
-    val popUp = Pane()
-    val static = Pane()
-    userInterface.children += popUp
-    userInterface.children += static
-    val advanceTurnBtn = AdvanceTurn(mapWidth-300, mapHeight)
-    static.children += advanceTurnBtn
+    val menuUI = Pane()
+    val staticUI = Pane()
+    val infoUI = Pane()
+    userInterface.children += menuUI
+    userInterface.children += staticUI
+    userInterface.children += infoUI
+    //add static UI-elements
+    val advanceTurnBtn = AdvanceTurnBtn(mapWidth-300, mapHeight)
+    var turnSign: TurnSign = TurnSign(0, mapHeight, game.gameState.actingPlayer)
+    staticUI.children += advanceTurnBtn
+    staticUI.children += turnSign
 
     //highlights tile in given grid coords
     def highlightTile(gridCoords: (Int, Int), color: Color) =
@@ -71,7 +76,7 @@ object GameApp extends JFXApp3:
       troops.children.clear()
       for troop <- game.gameLevel.troops do
         val imageView = new ImageView()
-        imageView.setImage(getTroopImage(troop.id))
+        imageView.setImage(getTroopImage(troop))
         imageView.setX(gridToSceneCoordX(troop.gridCoords))
         imageView.setY(gridToSceneCoordY(troop.gridCoords))
         troop.imageViewIndex = troops.children.size //saves troop's imageView-index
@@ -101,6 +106,7 @@ object GameApp extends JFXApp3:
     //listens for mouse clicks and then does things according to the mouse position and what is current action
     def handleInput() =
       root.onMouseClicked = event => {
+        //check if click was inside map
         if event.getY < mapHeight then
           val gridCoords = sceneToGridCoords(event.getX, event.getY)
           val clickedTile = game.gameLevel.tileAt(gridCoords)
@@ -108,15 +114,19 @@ object GameApp extends JFXApp3:
             //makes clicked tile the focus
             case NoFocus() | TileFocus(_) =>
               highlights.children.clear()
+              infoUI.children.clear()
               highlightTile(gridCoords, Black)
+              infoUI.children += tileInfo(mapWidth - 600, mapHeight, clickedTile)
               val clickedTroop = clickedTile.troop
               //check if clicked tile contains non-exhausted troop acting player controls
-              if clickedTroop.nonEmpty && !clickedTroop.get.exhausted && clickedTroop.get.controller == game.gameState.actingPlayer then
-                game.currentAction = TroopFocus(clickedTile)
-                if clickedTile.troop.get.hasMoved then
-                  addPopUp(TroopAttackMenu)
-                else
-                  addPopUp(TroopMenu)
+              if clickedTroop.nonEmpty then
+                infoUI.children += troopInfo(300, mapHeight, clickedTroop.get)
+                if !clickedTroop.get.exhausted && clickedTroop.get.controller == game.gameState.actingPlayer then
+                  game.currentAction = TroopFocus(clickedTile)
+                  if clickedTroop.get.hasMoved then
+                    addPopUp(TroopAttackMenu)
+                  else
+                    addPopUp(TroopMenu)
               else
                 game.currentAction = TileFocus(clickedTile)
 
@@ -129,7 +139,7 @@ object GameApp extends JFXApp3:
                 else TroopMenu
               currentUI.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
                 case Some(menuElement) =>
-                  popUp.children.clear()
+                  menuUI.children.clear()
                   menuElement.name match
                     case "Move" =>
                       game.currentAction = Moving(activeTile)
@@ -164,18 +174,21 @@ object GameApp extends JFXApp3:
                   removeTroop(target.get, clickedTile)
               removeFocus()
         else
+          //check if advance turn was clicked
           if advanceTurnBtn.menuElements.exists(_.tryClickMenuElement((event.getX, event.getY))) then
             game.gameState.advanceTurn()
+            turnSign.updateTurn(game.gameState.actingPlayer.toString)
             game.gameLevel.troops.foreach(_.refresh())
         }
       def removeFocus() =
         highlights.children.clear()
+        menuUI.children.clear()
+        infoUI.children.clear()
         game.currentAction = NoFocus()
-        popUp.children.clear()
 
       def addPopUp(menu: UI) =
-        popUp.children.clear()
-        popUp.children += menu
+        menuUI.children.clear()
+        menuUI.children += menu
 
       def troopMoveRange(troop: Troop) =
         game.gameLevel.coordsAtRange(troop.gridCoords, troop.movement)
