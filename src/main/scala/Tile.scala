@@ -1,5 +1,5 @@
 trait Tile(val id: String, gridCoords: (Int, Int)):
-
+  val coords = gridCoords
   var troop: Option[Troop] = None
   var isPassable = true
   val statModifier: Int

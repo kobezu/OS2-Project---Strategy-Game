@@ -49,6 +49,12 @@ object GameApp extends JFXApp3:
     root.children += highlights
     root.children += troops
     root.children += userInterface
+    //initialize branches of highlight
+    val focusHL = Pane()
+    val areaHL = Pane()
+    highlights.children += focusHL
+    highlights.children += areaHL
+    //initialize branches of userInterface
     val menuUI = Pane()
     val staticUI = Pane()
     val infoUI = Pane()
@@ -69,7 +75,45 @@ object GameApp extends JFXApp3:
         width = tileRes
         height = tileRes
         fill = color.opacity(0.3)
-      highlights.children += rectangle
+      focusHL.children += rectangle
+
+    //outlines area
+    def outlineArea(gridCoords: Vector[(Int, Int)], color: Color) =
+      val minX = gridCoords.map(_._1).min
+      val maxX = gridCoords.map(_._1).max
+      val minY = gridCoords.map(_._2).min
+      val maxY = gridCoords.map(_._2).max
+      val lineWidth = 5
+
+      def drawVerticalLine(sceneX: Int, sceneY: Int) =
+        val rectangle = new Rectangle:
+          x = sceneX
+          y = sceneY
+          width = lineWidth
+          height = tileRes
+          fill = color
+        rectangle
+
+      def drawHorizontalLine(sceneX: Int, sceneY: Int) =
+        val rectangle = new Rectangle:
+          x = sceneX
+          y = sceneY
+          width = tileRes
+          height = lineWidth
+          fill = color
+        rectangle
+
+      for coords <- gridCoords do
+        val x = coords._1
+        val y = coords._2
+        if x == minX then
+          areaHL.children += drawVerticalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords))
+        if x == maxX then
+          areaHL.children += drawVerticalLine(gridToSceneCoordX(coords) + tileRes - lineWidth, gridToSceneCoordY(coords))
+        if y == minY then
+          areaHL.children += drawHorizontalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords))
+        if y == maxY then
+          areaHL.children += drawHorizontalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords) + tileRes - lineWidth)
 
     //refreshes all troop imageView-objects
     def refreshTroopImages() =
@@ -81,6 +125,15 @@ object GameApp extends JFXApp3:
         imageView.setY(gridToSceneCoordY(troop.gridCoords))
         troop.imageViewIndex = troops.children.size //saves troop's imageView-index
         troops.children += imageView
+
+    //updates color of area lines according to controller
+    def updateLines() =
+      for area <- game.gameLevel.areas do
+        val controlColor =
+          area.controller match
+            case Some(player: Player) => player.color
+            case None => Gray
+        outlineArea(area.tiles.map(_.coords), controlColor)
 
     def renderGameLevel() =
       //render tiles in gameLevel
@@ -101,6 +154,9 @@ object GameApp extends JFXApp3:
       for troop <- game.gameLevel.troops do
         game.gameLevel.tileAt(troop.gridCoords).moveTo(troop) // saves troop to tile at it's grid coordinates
         refreshTroopImages()
+
+      //outline areas
+      updateLines()
     end renderGameLevel
 
     //listens for mouse clicks and then does things according to the mouse position and what is current action
@@ -113,14 +169,18 @@ object GameApp extends JFXApp3:
           game.currentAction match
             //makes clicked tile the focus
             case NoFocus() | TileFocus(_) =>
-              highlights.children.clear()
+              focusHL.children.clear()
               infoUI.children.clear()
               highlightTile(gridCoords, Black)
-              infoUI.children += tileInfo(mapWidth - 600, mapHeight, clickedTile)
+              infoUI.children += TileInfo(mapWidth - 600, mapHeight, clickedTile)
+              //display area-info if clicked tile is in area
+              game.gameLevel.areas.find(_.tiles.contains(clickedTile)) match
+                case Some(area: Area) => infoUI.children += AreaInfo(mapWidth - 800, mapHeight, area)
+                case None =>
               val clickedTroop = clickedTile.troop
               //check if clicked tile contains non-exhausted troop acting player controls
               if clickedTroop.nonEmpty then
-                infoUI.children += troopInfo(300, mapHeight, clickedTroop.get)
+                infoUI.children += TroopInfo(300, mapHeight, clickedTroop.get)
                 if !clickedTroop.get.exhausted && clickedTroop.get.controller == game.gameState.actingPlayer then
                   game.currentAction = TroopFocus(clickedTile)
                   if clickedTroop.get.hasMoved then
@@ -178,10 +238,11 @@ object GameApp extends JFXApp3:
           if advanceTurnBtn.menuElements.exists(_.tryClickMenuElement((event.getX, event.getY))) then
             game.gameState.advanceTurn()
             turnSign.updateTurn(game.gameState.actingPlayer.toString)
-            game.gameLevel.troops.foreach(_.refresh())
+            removeFocus()
+            updateLines()
         }
       def removeFocus() =
-        highlights.children.clear()
+        focusHL.children.clear()
         menuUI.children.clear()
         infoUI.children.clear()
         game.currentAction = NoFocus()

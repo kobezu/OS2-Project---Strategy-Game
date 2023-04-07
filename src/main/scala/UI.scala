@@ -74,21 +74,23 @@ class TurnSign(xPos: Int, yPos: Int, actingPlayer: Player) extends UI(xPos, yPos
   def updateTurn(actingPlayer: String) =
     textElements.foreach(_.setText("Turn: " + actingPlayer))
 
-class troopInfo(xPos: Int, yPos: Int, troop: Troop) extends UI(xPos, yPos):
-  val elementWidth = 100
+abstract class InfoUI(xPos: Int, yPos: Int) extends UI(xPos, yPos):
   val elementHeight = 50
   val bgColor = White
   val txtColor = Black
   val menuElements = Vector()
+
+class TroopInfo(xPos: Int, yPos: Int, troop: Troop) extends InfoUI(xPos, yPos):
+  val elementWidth = 100
   val textElements =
     Vector(createTxtElement(0, 0, "HP: " + troop.hp), createTxtElement(1, 0, "Atk: " + troop.attackPower),
     createTxtElement(2, 0, "Def: " + troop.defense), createTxtElement(3, 0, "Mov: " + troop.movement),
     createTxtElement(4, 0, "Rng: " + troop.range))
 
-class tileInfo(xPos: Int, yPos: Int, tile: Tile) extends UI(xPos, yPos):
+class TileInfo(xPos: Int, yPos: Int, tile: Tile) extends InfoUI(xPos, yPos):
   val elementWidth = 200
-  val elementHeight = 50
-  val bgColor = White
-  val txtColor = Black
-  val menuElements = Vector()
   val textElements = Vector(createTxtElement(0, 0, "Terrain: " + tile.id))
+
+class AreaInfo(xPos: Int, yPos: Int, area: Area) extends InfoUI(xPos, yPos):
+  val elementWidth = 200
+  val textElements = Vector(createTxtElement(0, 0, "Area Strength: " + area.strength))

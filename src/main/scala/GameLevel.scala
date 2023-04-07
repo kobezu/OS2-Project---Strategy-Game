@@ -1,8 +1,8 @@
 import scala.collection.mutable.Buffer
 
-class GameLevel(numGrid: Vector[Vector[Int]]):
+class GameLevel(numGrid: Vector[Vector[(Int)]]):
 
-  val troops = Buffer[Troop](Solider(Red, (3, 4)),Solider(Red, (6, 5)),Solider(Blue, (7, 5)))
+  val troops = Buffer[Troop](Solider(RedPlayer, (3, 4)),Solider(RedPlayer, (6, 5)),Solider(BluePlayer, (7, 5)))
 
   def numberToTile(number: Int, gridCoords: (Int, Int)): Tile =
     number match
@@ -15,6 +15,12 @@ class GameLevel(numGrid: Vector[Vector[Int]]):
     numGrid.zipWithIndex
       .map(row => (row._1.zipWithIndex
         .map(cell => numberToTile(cell._1, (cell._2, row._2)))))
+
+  val areas =
+    Vector[Area](Base(Vector((3,11), (4,11), (3,10), (4, 10)).map(tileAt(_)), RedPlayer), 
+    Base(Vector((21,11), (20,11), (21,10), (20, 10)).map(tileAt(_)), BluePlayer), 
+    Settlement(Vector((3,4), (4,4), (3,5), (4, 5)).map(tileAt(_))),
+    Settlement(Vector((8,4), (9,4), (8,5), (9, 5)).map(tileAt(_))))
 
   def gridWidth: Int = tileGrid(0).size
   def gridHeight: Int = tileGrid.size
