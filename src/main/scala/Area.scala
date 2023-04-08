@@ -2,6 +2,7 @@ abstract class Area(val tiles: Vector[Tile]):
   var controller: Option[Player]
   var strength: Int
 
+  //if control changes updates score accordingly
   def updateScore(newController: Option[Player]): Unit
 
   def updateControl() =

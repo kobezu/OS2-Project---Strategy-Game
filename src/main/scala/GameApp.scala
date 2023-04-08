@@ -1,5 +1,5 @@
+import scala.collection.mutable.Buffer
 import javafx.scene.paint.Color
-
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -8,6 +8,7 @@ import scalafx.application.JFXApp3
 import scalafx.scene.Scene
 import scalafx.scene.layout.Pane
 import scalafx.scene.text.Font
+import scalafx.scene.text.Text
 import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
@@ -46,8 +47,8 @@ object GameApp extends JFXApp3:
     val userInterface = Pane()
     val highlights = Pane()
     root.children += tiles
-    root.children += highlights
     root.children += troops
+    root.children += highlights
     root.children += userInterface
     //initialize branches of highlight
     val focusHL = Pane()
@@ -74,7 +75,7 @@ object GameApp extends JFXApp3:
         y = gridToSceneCoordY(gridCoords)
         width = tileRes
         height = tileRes
-        fill = color.opacity(0.3)
+        fill = color.opacity(0.4)
       focusHL.children += rectangle
 
     //outlines area
@@ -157,6 +158,19 @@ object GameApp extends JFXApp3:
 
       //outline areas
       updateLines()
+
+      //movement-range test
+      /*def paintText(gridCoords: (Int, Int), textToPaint: String) =
+        val text = new Text(textToPaint):
+          font = new Font(20)
+          fill = Black
+          x = gridToSceneCoordX(gridCoords)
+          y = gridToSceneCoordY(gridCoords) +20
+        tiles.children += text
+
+      val startTile = game.gameLevel.tileAt((18,18))
+      game.gameLevel.movementRange((startTile, 0), 5, Buffer[(Tile, Int)]()).foreach(a => paintText(a._1.coords, a._2.toString))
+      */
     end renderGameLevel
 
     //listens for mouse clicks and then does things according to the mouse position and what is current action
@@ -203,7 +217,9 @@ object GameApp extends JFXApp3:
                   menuElement.name match
                     case "Move" =>
                       game.currentAction = Moving(activeTile)
-                      troopMoveRange(activeTroop).foreach(highlightTile(_, LightBlue))
+                      troopMoveRange(activeTile).filter(_._1 != activeTile).foreach(a =>
+                        val highlightColor = if a._1.isPassable then LightBlue else Red
+                        highlightTile(a._1.coords, highlightColor))
                     case "Attack" =>
                       game.currentAction = Attacking(activeTile)
                       troopAttackRange(activeTroop).foreach(highlightTile(_, Red))
@@ -215,7 +231,7 @@ object GameApp extends JFXApp3:
             //moves active troop if the tile clicked is legal for movement
             case Moving(activeTile) =>
               val movingTroop = activeTile.troop.get
-              if troopMoveRange(movingTroop).contains(gridCoords) && clickedTile.isPassable then
+              if troopMoveRange(activeTile).exists(_._1.coords == gridCoords) && clickedTile.isPassable then
                 movingTroop.move(gridCoords) //updates moving troop's coords
                 clickedTile.moveTo(movingTroop) //stores troop to the new tile
                 activeTile.removeTroop() //removes troop from the old tile
@@ -251,8 +267,8 @@ object GameApp extends JFXApp3:
         menuUI.children.clear()
         menuUI.children += menu
 
-      def troopMoveRange(troop: Troop) =
-        game.gameLevel.coordsAtRange(troop.gridCoords, troop.movement)
+      def troopMoveRange(tile: Tile) =
+        game.gameLevel.tilesAtMovementRange(tile, tile.troop.get.movement)
 
       def troopAttackRange(troop: Troop) =
         game.gameLevel.coordsAtRange(troop.gridCoords, troop.range)
