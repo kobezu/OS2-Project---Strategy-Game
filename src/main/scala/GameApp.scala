@@ -24,8 +24,8 @@ object GameApp extends JFXApp3:
   def gridToSceneCoordX(gridCoords: (Int, Int)) = gridCoords._1 * tileRes
   def gridToSceneCoordY(gridCoords: (Int, Int)) = gridCoords._2 * tileRes
   //get tile and troop images
-  def getTileImage(tileId: String) = Image(FileInputStream("images\\tiles\\" + tileId + ".png"))
-  def getTroopImage(troop: Troop) = Image(FileInputStream("images\\troops\\" + troop.id + "_" + troop.controller.toString.toLowerCase + ".png"))
+  def getTileImage(tileId: String) = Image(FileInputStream("data\\images\\tiles\\" + tileId + ".png"))
+  def getTroopImage(troop: Troop) = Image(FileInputStream("data\\images\\troops\\" + troop.id + "_" + troop.controller.toString.toLowerCase + ".png"))
 
   def start(): Unit =
     val mapWidth = tileRes * game.gameLevel.gridWidth
