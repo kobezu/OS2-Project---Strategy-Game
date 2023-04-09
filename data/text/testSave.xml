@@ -1,0 +1,73 @@
+<save>
+	<game_state>
+		<player color="Red">
+			<resources>10</resources>
+		</player>
+		<player color="Blue">
+			<resources>10</resources>
+		</player>
+		<acting_player>Red</acting_player>
+	</game_state>
+	<areas>
+		<base color="Red">
+			<tiles>
+				<tile>0,5</tile>
+				<tile>0,6</tile>
+				<tile>0,7</tile>
+				<tile>1,5</tile>
+				<tile>1,6</tile>
+				<tile>1,7</tile>
+			</tiles>
+			<strength>3</strength>
+		</base>
+		<base color="Blue">
+			<tiles>
+				<tile>15,5</tile>
+				<tile>15,6</tile>
+				<tile>15,7</tile>
+				<tile>16,5</tile>
+				<tile>16,6</tile>
+				<tile>16,7</tile>
+			</tiles>
+			<strength>3</strength>
+		</base>
+		<settlement>
+			<tiles>
+				<tile>5,5</tile>
+				<tile>5,6</tile>
+				<tile>6,5</tile>
+				<tile>6,6</tile>
+			</tiles>
+			<controller>none</controller>
+			<strength>3</strength>
+		</settlement>
+		<settlement>
+			<tiles>
+				<tile>8,9</tile>
+				<tile>8,10</tile>
+				<tile>9,9</tile>
+				<tile>9,10</tile>
+			</tiles>
+			<controller>none</controller>
+			<strength>2</strength>
+		</settlement>
+	</areas>
+	<troops>
+		<player color="Red">
+			<troop>
+				<type>solider</type>
+				<location>2,10</location>
+				<hp>full</hp>
+				<status>ready</status>
+			</troop>
+		</player>
+		<player color="Blue">
+			<troop>
+				<type>solider</type>
+				<location>4,10</location>
+				<hp>2</hp>
+				<status>ready</status>
+			</troop>
+		</player>
+	</troops>
+</save>

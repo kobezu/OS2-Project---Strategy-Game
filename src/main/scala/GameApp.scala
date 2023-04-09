@@ -17,6 +17,7 @@ object GameApp extends JFXApp3:
   val game = Game()
   //resolution of tile
   val tileRes = 48
+  //height of info-area
   val infoArea = 50
   //convert scene coords to grid coords
   def sceneToGridCoords(x:Double, y: Double): (Int, Int) = ((x/tileRes).toInt, (y/tileRes).toInt)
@@ -28,6 +29,9 @@ object GameApp extends JFXApp3:
   def getTroopImage(troop: Troop) = Image(FileInputStream("data\\images\\troops\\" + troop.id + "_" + troop.controller.toString.toLowerCase + ".png"))
 
   def start(): Unit =
+    //load game from save file
+    game.fileManager.loadSaveData("testSave.xml")
+
     val mapWidth = tileRes * game.gameLevel.gridWidth
     val mapHeight = tileRes * game.gameLevel.gridHeight
 

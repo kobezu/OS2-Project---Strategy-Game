@@ -57,7 +57,7 @@ class Settlement(tiles: Vector[Tile]) extends Area(tiles):
         controller.foreach(_.settlements -= 1)
 
 
-sealed class Base(tiles: Vector[Tile], owner: Player) extends Area(tiles):
+class Base(tiles: Vector[Tile], owner: Player) extends Area(tiles):
   var controller = Some(owner)
   var strength = 3
 
