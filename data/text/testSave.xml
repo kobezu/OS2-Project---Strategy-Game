@@ -1,4 +1,5 @@
 <save>
+	<game_map>test.txt</game_map>
 	<game_state>
 		<player color="Red">
 			<resources>10</resources>
@@ -38,7 +39,7 @@
 				<tile>6,5</tile>
 				<tile>6,6</tile>
 			</tiles>
-			<controller>none</controller>
+			<controller>None</controller>
 			<strength>3</strength>
 		</settlement>
 		<settlement>
@@ -48,26 +49,24 @@
 				<tile>9,9</tile>
 				<tile>9,10</tile>
 			</tiles>
-			<controller>none</controller>
+			<controller>None</controller>
 			<strength>2</strength>
 		</settlement>
 	</areas>
-	<troops>
-		<player color="Red">
-			<troop>
-				<type>solider</type>
-				<location>2,10</location>
-				<hp>full</hp>
-				<status>ready</status>
-			</troop>
-		</player>
-		<player color="Blue">
-			<troop>
-				<type>solider</type>
-				<location>4,10</location>
-				<hp>2</hp>
-				<status>ready</status>
-			</troop>
-		</player>
+	<troops color="Red">
+		<troop>
+			<type>solider</type>
+			<location>2,10</location>
+			<hp>full</hp>
+			<status>ready</status>
+		</troop>
+	</troops>
+	<troops color="Blue">
+		<troop>
+			<type>solider</type>
+			<location>4,10</location>
+			<hp>2</hp>
+			<status>ready</status>
+		</troop>
 	</troops>
 </save>

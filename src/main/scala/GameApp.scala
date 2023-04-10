@@ -14,7 +14,8 @@ import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 
 object GameApp extends JFXApp3:
-  val game = Game()
+  val fileManager = FileManager()
+  val game = fileManager.loadSave("testSave.xml")
   //resolution of tile
   val tileRes = 48
   //height of info-area
@@ -27,11 +28,11 @@ object GameApp extends JFXApp3:
   //get tile and troop images
   def getTileImage(tileId: String) = Image(FileInputStream("data\\images\\tiles\\" + tileId + ".png"))
   def getTroopImage(troop: Troop) = Image(FileInputStream("data\\images\\troops\\" + troop.id + "_" + troop.controller.toString.toLowerCase + ".png"))
+  
+  //save game when closing GameApp
+  override def stopApp() = fileManager.saveGame(game)
 
   def start(): Unit =
-    //load game from save file
-    game.fileManager.loadSaveData("testSave.xml")
-
     val mapWidth = tileRes * game.gameLevel.gridWidth
     val mapHeight = tileRes * game.gameLevel.gridHeight
 
@@ -131,7 +132,7 @@ object GameApp extends JFXApp3:
         troop.imageViewIndex = troops.children.size //saves troop's imageView-index
         troops.children += imageView
 
-    //updates color of area lines according to controller
+    //updates color of area lines according to controller of the area
     def updateLines() =
       for area <- game.gameLevel.areas do
         val controlColor =
@@ -284,8 +285,6 @@ object GameApp extends JFXApp3:
         refreshTroopImages()
     end handleInput
 
-
     renderGameLevel()
     handleInput()
-
 end GameApp

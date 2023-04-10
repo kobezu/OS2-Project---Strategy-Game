@@ -1,6 +1,4 @@
-class Game():
-  val fileManager = FileManager(this)
-  val gameLevel = GameLevel(fileManager.gameMapReader("test.txt"))
+class Game(val gameLevel: GameLevel):
   val gameState = GameState(this)
   var currentAction: Action = NoFocus()
 end Game

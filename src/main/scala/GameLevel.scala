@@ -3,7 +3,6 @@ import scala.collection.mutable.Buffer
 class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
 
   val troops = Buffer[Troop]()
-    /*(Solider(RedPlayer, (3, 4)),Solider(RedPlayer, (6, 5)),Solider(BluePlayer, (7, 5)))*/
 
   val areas = Buffer[Area]()
 
