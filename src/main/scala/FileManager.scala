@@ -5,6 +5,7 @@ import scala.xml
 class FileManager():
   private var loadedMap = ""
 
+  //create game map from map-file
   def gameMapReader(mapName: String) =
     val mapDataSource = Source.fromFile("data\\text\\" + mapName)
     val lines = Buffer[String]()
@@ -21,6 +22,8 @@ class FileManager():
         case 1 => Plain(gridCoords)
         case 2 => Forest(gridCoords)
         case 3 => Water(gridCoords)
+        case 4 => Marsh(gridCoords)
+        case 5 => Road(gridCoords)
 
     val map =
       numGrid.toVector.zipWithIndex
@@ -66,6 +69,10 @@ class FileManager():
         //make correct troop
         val troop = (troopData \\ "type").text match
           case "solider" => Solider(color, coords)
+          case "tank" => Tank(color, coords)
+          case "artillery" => Artillery(color, coords)
+          case "apache" => Apache(color, coords)
+          case "sniper" => Sniper(color, coords)
         //set troop hp and status
         (troopData \\ "hp").text match
           case "full" =>

@@ -1,5 +1,5 @@
 <save>
-	<game_map>test.txt</game_map>
+	<game_map>testMap.txt</game_map>
 	<game_state>
 		<player color="Red">
 			<resources>10</resources>
@@ -60,12 +60,42 @@
 			<hp>full</hp>
 			<status>ready</status>
 		</troop>
+		<troop>
+			<type>tank</type>
+			<location>7,13</location>
+			<hp>full</hp>
+			<status>ready</status>
+		</troop>
+		<troop>
+			<type>sniper</type>
+			<location>10,2</location>
+			<hp>full</hp>
+			<status>ready</status>
+		</troop>
+		<troop>
+			<type>apache</type>
+			<location>20,13</location>
+			<hp>full</hp>
+			<status>ready</status>
+		</troop>
 	</troops>
 	<troops color="Blue">
 		<troop>
 			<type>solider</type>
 			<location>4,10</location>
 			<hp>2</hp>
+			<status>ready</status>
+		</troop>
+		<troop>
+			<type>artillery</type>
+			<location>10,13</location>
+			<hp>full</hp>
+			<status>ready</status>
+		</troop>
+		<troop>
+			<type>apache</type>
+			<location>14,13</location>
+			<hp>full</hp>
 			<status>ready</status>
 		</troop>
 	</troops>

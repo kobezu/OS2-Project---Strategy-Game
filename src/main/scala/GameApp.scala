@@ -1,5 +1,6 @@
 import scala.collection.mutable.Buffer
 import javafx.scene.paint.Color
+
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -13,28 +14,32 @@ import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 
+import scala.util.Random
+
 object GameApp extends JFXApp3:
   val fileManager = FileManager()
   val game = fileManager.loadSave("testSave.xml")
   //resolution of tile
-  val tileRes = 48
+  val tileRes = 24
+  val scaleBy = 1
+  val tileSize = 24 * scaleBy
   //height of info-area
-  val infoArea = 50
+  val infoArea = 48
   //convert scene coords to grid coords
-  def sceneToGridCoords(x:Double, y: Double): (Int, Int) = ((x/tileRes).toInt, (y/tileRes).toInt)
+  def sceneToGridCoords(x:Double, y: Double): (Int, Int) = ((x/tileSize).toInt, (y/tileSize).toInt)
   //convert grid coords to scene coords
-  def gridToSceneCoordX(gridCoords: (Int, Int)) = gridCoords._1 * tileRes
-  def gridToSceneCoordY(gridCoords: (Int, Int)) = gridCoords._2 * tileRes
+  def gridToSceneCoordX(gridCoords: (Int, Int)) = gridCoords._1 * tileSize
+  def gridToSceneCoordY(gridCoords: (Int, Int)) = gridCoords._2 * tileSize
   //get tile and troop images
   def getTileImage(tileId: String) = Image(FileInputStream("data\\images\\tiles\\" + tileId + ".png"))
   def getTroopImage(troop: Troop) = Image(FileInputStream("data\\images\\troops\\" + troop.id + "_" + troop.controller.toString.toLowerCase + ".png"))
-  
+
   //save game when closing GameApp
   override def stopApp() = fileManager.saveGame(game)
 
   def start(): Unit =
-    val mapWidth = tileRes * game.gameLevel.gridWidth
-    val mapHeight = tileRes * game.gameLevel.gridHeight
+    val mapWidth = tileSize * game.gameLevel.gridWidth
+    val mapHeight = tileSize * game.gameLevel.gridHeight
 
     stage = new JFXApp3.PrimaryStage:
       title = "Game App"
@@ -78,8 +83,8 @@ object GameApp extends JFXApp3:
       val rectangle = new Rectangle:
         x = gridToSceneCoordX(gridCoords)
         y = gridToSceneCoordY(gridCoords)
-        width = tileRes
-        height = tileRes
+        width = tileSize
+        height = tileSize
         fill = color.opacity(0.4)
       focusHL.children += rectangle
 
@@ -89,14 +94,14 @@ object GameApp extends JFXApp3:
       val maxX = gridCoords.map(_._1).max
       val minY = gridCoords.map(_._2).min
       val maxY = gridCoords.map(_._2).max
-      val lineWidth = 5
+      val lineWidth = 2 * scaleBy
 
       def drawVerticalLine(sceneX: Int, sceneY: Int) =
         val rectangle = new Rectangle:
           x = sceneX
           y = sceneY
           width = lineWidth
-          height = tileRes
+          height = tileSize
           fill = color
         rectangle
 
@@ -104,7 +109,7 @@ object GameApp extends JFXApp3:
         val rectangle = new Rectangle:
           x = sceneX
           y = sceneY
-          width = tileRes
+          width = tileSize
           height = lineWidth
           fill = color
         rectangle
@@ -115,11 +120,11 @@ object GameApp extends JFXApp3:
         if x == minX then
           areaHL.children += drawVerticalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords))
         if x == maxX then
-          areaHL.children += drawVerticalLine(gridToSceneCoordX(coords) + tileRes - lineWidth, gridToSceneCoordY(coords))
+          areaHL.children += drawVerticalLine(gridToSceneCoordX(coords) + tileSize - lineWidth, gridToSceneCoordY(coords))
         if y == minY then
           areaHL.children += drawHorizontalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords))
         if y == maxY then
-          areaHL.children += drawHorizontalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords) + tileRes - lineWidth)
+          areaHL.children += drawHorizontalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords) + tileSize - lineWidth)
 
     //refreshes all troop imageView-objects
     def refreshTroopImages() =
@@ -127,6 +132,8 @@ object GameApp extends JFXApp3:
       for troop <- game.gameLevel.troops do
         val imageView = new ImageView()
         imageView.setImage(getTroopImage(troop))
+        imageView.setFitWidth(tileSize)
+        imageView.setFitHeight(tileSize)
         imageView.setX(gridToSceneCoordX(troop.gridCoords))
         imageView.setY(gridToSceneCoordY(troop.gridCoords))
         troop.imageViewIndex = troops.children.size //saves troop's imageView-index
@@ -149,11 +156,13 @@ object GameApp extends JFXApp3:
         for tile <- row do
           val imageView = new ImageView()
           imageView.setImage(getTileImage(tile.id))
+          imageView.setFitWidth(tileSize)
+          imageView.setFitHeight(tileSize)
           imageView.setX(currentX)
           imageView.setY(currentY)
           tiles.children += imageView
-          currentX += tileRes
-        currentY += tileRes
+          currentX += tileSize
+        currentY += tileSize
         currentX = 0
 
       //render troops in gameLevel
@@ -161,6 +170,17 @@ object GameApp extends JFXApp3:
         game.gameLevel.tileAt(troop.gridCoords).moveTo(troop) // saves troop to tile at it's grid coordinates
         refreshTroopImages()
 
+      //render houses to areas
+      for area <- game.gameLevel.areas do
+        //choose tile randomly
+        val tile = area.tiles(Random.nextInt(area.tiles.size-1))
+        val imageView = new ImageView()
+          imageView.setImage(getTileImage("settlement"))
+          imageView.setFitWidth(tileSize)
+          imageView.setFitHeight(tileSize)
+          imageView.setX(gridToSceneCoordX(tile.coords))
+          imageView.setY(gridToSceneCoordY(tile.coords))
+          tiles.children += imageView
       //outline areas
       updateLines()
 
@@ -227,7 +247,10 @@ object GameApp extends JFXApp3:
                         highlightTile(a._1.coords, highlightColor))
                     case "Attack" =>
                       game.currentAction = Attacking(activeTile)
-                      troopAttackRange(activeTroop).foreach(highlightTile(_, Red))
+                      troopAttackRange(activeTroop).foreach(a => highlightTile(a,
+                        game.gameLevel.tileAt(a).troop match
+                          case None => Red
+                          case Some(troop: Troop) => if troop.controller == activeTroop.controller then Red else Blue))
                     case "Wait" =>
                       removeFocus()
                       activeTroop.exhaust()
@@ -273,7 +296,7 @@ object GameApp extends JFXApp3:
         menuUI.children += menu
 
       def troopMoveRange(tile: Tile) =
-        game.gameLevel.tilesAtMovementRange(tile, tile.troop.get.movement)
+        game.gameLevel.tilesAtMovementRange(tile)
 
       def troopAttackRange(troop: Troop) =
         game.gameLevel.coordsAtRange(troop.gridCoords, troop.range)
