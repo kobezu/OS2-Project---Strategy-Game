@@ -76,7 +76,7 @@ class FileManager():
         //set troop hp and status
         (troopData \\ "hp").text match
           case "full" =>
-          case notFull => troop.hp = notFull.toInt
+          case notFull => troop.modifyStat(Stat.Hp, notFull.toInt - troop.hp)
         (troopData \\ "status").text match
           case "ready" =>
           case "moved" => troop.hasMoved = true
@@ -170,7 +170,7 @@ class FileManager():
             <troop>
               <type>{troop.id}</type>
               <location>{locationData(troop.gridCoords)}</location>
-              <hp>{troop.hp}</hp>
+              <hp>{troop.stats(Stat.Hp)}</hp>
               <status>{status}</status>
             </troop>}
       data.toSeq

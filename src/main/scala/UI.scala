@@ -4,6 +4,7 @@ import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.Text
 import scalafx.scene.text.Font
+import Stat.*
 
 class MenuElement(val name: String, elementCoords: (Double, Double), width: Int, height: Int):
   def tryClickMenuElement(clickCoords: (Double, Double)): Boolean =
@@ -18,7 +19,7 @@ abstract class UI(xPos: Int, yPos: Int) extends Pane:
   val menuElements: Vector[MenuElement]
   val textElements: Vector[Text]
 
-  def createTxtElement(xn: Int, yn: Int, name: String) =
+  def createTxtElement(xn: Int, yn: Int, name: String, color: Color) =
     val bg = new Rectangle:
       width = elementWidth
       height = elementHeight
@@ -27,7 +28,7 @@ abstract class UI(xPos: Int, yPos: Int) extends Pane:
       fill = bgColor
     val text = new Text(name):
       font = new Font(20)
-      fill = txtColor
+      fill = color
       x = bg.getX + (elementWidth/3.0).toInt
       y = bg.getY + (elementHeight/1.5).toInt
     this.children += bg
@@ -35,7 +36,7 @@ abstract class UI(xPos: Int, yPos: Int) extends Pane:
     text
 
   def createMenuElement(n: Int, name: String) =
-    createTxtElement(0, n, name)
+    createTxtElement(0, n, name, txtColor)
     MenuElement(name, (xPos, yPos + n * elementHeight), elementWidth, elementHeight)
 
 
@@ -69,7 +70,7 @@ class TurnSign(xPos: Int, yPos: Int, actingPlayer: Player) extends UI(xPos, yPos
   val bgColor = Gray
   val txtColor = White
   val menuElements = Vector()
-  val textElements = Vector(createTxtElement(0, 0, "Turn: " + actingPlayer))
+  val textElements = Vector(createTxtElement(0, 0, "Turn: " + actingPlayer, txtColor))
 
   def updateTurn(actingPlayer: String) =
     textElements.foreach(_.setText("Turn: " + actingPlayer))
@@ -83,14 +84,21 @@ abstract class InfoUI(xPos: Int, yPos: Int) extends UI(xPos, yPos):
 class TroopInfo(xPos: Int, yPos: Int, troop: Troop) extends InfoUI(xPos, yPos):
   val elementWidth = 100
   val textElements =
-    Vector(createTxtElement(0, 0, "HP: " + troop.hp), createTxtElement(1, 0, "Atk: " + troop.attackPower),
-    createTxtElement(2, 0, "Def: " + troop.defense), createTxtElement(3, 0, "Mov: " + troop.movement),
-    createTxtElement(4, 0, "Rng: " + troop.range))
+    Vector(statInfo(0, Hp), statInfo(1, Atk), statInfo(2, Def), statInfo(3, Mov), statInfo(4, Rng))
+
+  def statInfo(n: Int, stat: Stat) =
+    val statDifference = troop.stats(stat) - troop.baseStat(stat)
+    //set color based on how stat is modified
+    val color ={
+      if statDifference == 0 then txtColor
+      else if statDifference > 0 then Blue
+      else Red}
+    createTxtElement(n, 0, stat.toString + ": " + troop.stats(stat), color)
 
 class TileInfo(xPos: Int, yPos: Int, tile: Tile) extends InfoUI(xPos, yPos):
   val elementWidth = 200
-  val textElements = Vector(createTxtElement(0, 0, "Terrain: " + tile.id))
+  val textElements = Vector(createTxtElement(0, 0, "Terrain: " + tile.id, txtColor))
 
 class AreaInfo(xPos: Int, yPos: Int, area: Area) extends InfoUI(xPos, yPos):
   val elementWidth = 200
-  val textElements = Vector(createTxtElement(0, 0, "Area Strength: " + area.strength))
+  val textElements = Vector(createTxtElement(0, 0, "Area Strength: " + area.strength, txtColor))

@@ -167,6 +167,7 @@ object GameApp extends JFXApp3:
 
       //render troops in gameLevel
       for troop <- game.gameLevel.troops do
+        troop.initializeStats()
         game.gameLevel.tileAt(troop.gridCoords).moveTo(troop) // saves troop to tile at it's grid coordinates
         refreshTroopImages()
 
@@ -247,6 +248,7 @@ object GameApp extends JFXApp3:
                         highlightTile(a._1.coords, highlightColor))
                     case "Attack" =>
                       game.currentAction = Attacking(activeTile)
+                      //highlight attack range red and enemy troops in range blue
                       troopAttackRange(activeTroop).foreach(a => highlightTile(a,
                         game.gameLevel.tileAt(a).troop match
                           case None => Red
@@ -274,7 +276,7 @@ object GameApp extends JFXApp3:
               //check if clicked tile is in range and contains enemy troop
               if troopAttackRange(attackingTroop).contains(gridCoords) && target.nonEmpty && target.get.controller != game.gameState.actingPlayer then
                 attackingTroop.attack(target.get)
-                if target.get.hp <= 0 then
+                if target.get.stats(Stat.Hp) <= 0 then
                   removeTroop(target.get, clickedTile)
               removeFocus()
         else
@@ -299,7 +301,7 @@ object GameApp extends JFXApp3:
         game.gameLevel.tilesAtMovementRange(tile)
 
       def troopAttackRange(troop: Troop) =
-        game.gameLevel.coordsAtRange(troop.gridCoords, troop.range)
+        game.gameLevel.coordsAtRange(troop.gridCoords, troop.stats(Stat.Rng))
 
       //remove troop from game
       def removeTroop(troop: Troop, tile: Tile) =

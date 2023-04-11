@@ -41,7 +41,7 @@ class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
   //returns each tile that troop can reach with given movement range
   def tilesAtMovementRange(startTile: Tile) =
     val troop = startTile.troop.get
-    tileMovementCosts((startTile, 0), troop.movement, troop.troopType, Buffer[(Tile, Int)]()).filterNot(_._2 > troop.movement)
+    tileMovementCosts((startTile, 0), troop.stats(Stat.Mov), troop.troopType, Buffer[(Tile, Int)]()).filterNot(_._2 > troop.stats(Stat.Mov))
 
   //returns the Tile-object at given grid-coordinates
   def tileAt(coords: (Int, Int)): Tile = tileGrid(coords._2)(coords._1)
@@ -52,4 +52,5 @@ class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
     Vector((x-1, y), (x+1, y), (x, y-1), (x, y+1))
       .filterNot(c => c._1 < 0 | c._1 >= gridWidth | c._2 < 0 | c._2 >= gridHeight)
       .map(tileAt(_))
+    
 end GameLevel
