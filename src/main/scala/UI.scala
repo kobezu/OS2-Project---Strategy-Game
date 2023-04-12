@@ -39,22 +39,24 @@ abstract class UI(xPos: Int, yPos: Int) extends Pane:
     createTxtElement(0, n, name, txtColor)
     MenuElement(name, (xPos, yPos + n * elementHeight), elementWidth, elementHeight)
 
-
-object TroopMenu extends UI(1000, 200):
+abstract class Menu(xPos: Int, yPos: Int) extends UI(xPos, yPos):
   val elementWidth = 200
   val elementHeight = 70
   val bgColor = Gray
   val txtColor = White
+  val textElements = Vector()
+
+
+object TroopMenu extends Menu(1000, 200):
   val menuElements = Vector(createMenuElement(0, "Move"), createMenuElement(1, "Attack"), createMenuElement(2, "Wait"))
-  val textElements = Vector()
 
-object TroopAttackMenu extends UI(1000, 200):
-  val elementWidth = 200
-  val elementHeight = 70
-  val bgColor = Gray
-  val txtColor = White
+object TroopAttackMenu extends Menu(1000, 200):
   val menuElements = Vector(createMenuElement(0, "Attack"), createMenuElement(1, "Wait"))
-  val textElements = Vector()
+
+object BuildMenu extends Menu(1000, 200):
+  val menuElements =
+    Vector(createMenuElement(0, "Solider"), createMenuElement(1, "Sniper"),
+      createMenuElement(2, "Tank"), createMenuElement(3, "Artillery"), createMenuElement(4, "Apache"))
 
 class AdvanceTurnBtn(xPos: Int, yPos: Int) extends UI(xPos, yPos):
   val elementWidth = 300
@@ -76,15 +78,14 @@ class TurnSign(xPos: Int, yPos: Int, actingPlayer: Player) extends UI(xPos, yPos
     textElements.foreach(_.setText("Turn: " + actingPlayer))
 
 abstract class InfoUI(xPos: Int, yPos: Int) extends UI(xPos, yPos):
-  val elementHeight = 50
+  val elementHeight = 48
   val bgColor = White
   val txtColor = Black
   val menuElements = Vector()
 
 class TroopInfo(xPos: Int, yPos: Int, troop: Troop) extends InfoUI(xPos, yPos):
   val elementWidth = 100
-  val textElements =
-    Vector(statInfo(0, Hp), statInfo(1, Atk), statInfo(2, Def), statInfo(3, Mov), statInfo(4, Rng))
+  val textElements = Vector(statInfo(0, Hp), statInfo(1, Atk), statInfo(2, Def), statInfo(3, Mov), statInfo(4, Rng))
 
   def statInfo(n: Int, stat: Stat) =
     val statDifference = troop.stats(stat) - troop.baseStat(stat)
@@ -102,3 +103,23 @@ class TileInfo(xPos: Int, yPos: Int, tile: Tile) extends InfoUI(xPos, yPos):
 class AreaInfo(xPos: Int, yPos: Int, area: Area) extends InfoUI(xPos, yPos):
   val elementWidth = 200
   val textElements = Vector(createTxtElement(0, 0, "Area Strength: " + area.strength, txtColor))
+
+class GameInfo(xPos: Int, yPos: Int, actingPlayer: Player) extends InfoUI(xPos, yPos):
+  val elementWidth = 200
+  val textElements = Vector(createTxtElement(0, 0, "Turn: " + actingPlayer, txtColor))
+    ++ playerInfo(1, RedPlayer) ++ playerInfo(3, BluePlayer)
+
+  def playerInfo(n: Int, player: Player) =
+    Vector(createTxtElement(0, 0 + n, "Score: " + player.settlements, player.color),
+    createTxtElement(0, 1 + n, "Resources: " + player.resources, player.color))
+
+  def updateResources(player: Player) =
+    val index = if player == RedPlayer then 2 else 4
+    textElements(index).setText("Resources: " + player.resources)
+
+  def updateTurn(actingPlayer: String) =
+    textElements(0).setText("Turn: " + actingPlayer)
+    textElements(1).setText("Score: " + RedPlayer.settlements)
+    textElements(3).setText("Score: " + BluePlayer.settlements)
+    updateResources(RedPlayer)
+    updateResources(BluePlayer)

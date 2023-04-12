@@ -2,12 +2,12 @@
         <game_map>testMap.txt</game_map>
         <game_state>
         <player color="Red">
-          <resources>10</resources>
+          <resources>11</resources>
         </player>
         <player color="Blue">
-          <resources>10</resources>
+          <resources>6</resources>
         </player>
-        <acting_player>Red</acting_player>
+        <acting_player>Blue</acting_player>
       </game_state>
         <areas>
         <base color="Red">
@@ -26,54 +26,64 @@
               <tiles>
         <tile>5,5</tile><tile>5,6</tile><tile>6,5</tile><tile>6,6</tile>
       </tiles>
-              <controller>None</controller>
-              <strength>1</strength>
+              <controller>Red</controller>
+              <strength>0</strength>
             </settlement><settlement>
               <tiles>
         <tile>8,9</tile><tile>8,10</tile><tile>9,9</tile><tile>9,10</tile>
       </tiles>
               <controller>Blue</controller>
-              <strength>1</strength>
+              <strength>3</strength>
             </settlement>
       </areas>
         <troops color="Red">
         <troop>
               <type>solider</type>
-              <location>2,10</location>
+              <location>11,12</location>
               <hp>3</hp>
-              <status>ready</status>
+              <status>exhausted</status>
             </troop><troop>
               <type>tank</type>
-              <location>7,13</location>
+              <location>10,10</location>
               <hp>6</hp>
-              <status>ready</status>
+              <status>exhausted</status>
             </troop><troop>
               <type>sniper</type>
-              <location>10,2</location>
+              <location>11,6</location>
               <hp>3</hp>
-              <status>ready</status>
+              <status>exhausted</status>
             </troop><troop>
               <type>apache</type>
-              <location>20,13</location>
+              <location>17,7</location>
               <hp>4</hp>
-              <status>ready</status>
-            </troop>
-      </troops><troops color="Blue">
-        <troop>
-              <type>solider</type>
-              <location>4,10</location>
-              <hp>2</hp>
+              <status>exhausted</status>
+            </troop><troop>
+              <type>sniper</type>
+              <location>1,7</location>
+              <hp>3</hp>
               <status>ready</status>
             </troop><troop>
               <type>artillery</type>
-              <location>10,13</location>
+              <location>2,6</location>
               <hp>4</hp>
+              <status>moved</status>
+            </troop><troop>
+              <type>tank</type>
+              <location>3,5</location>
+              <hp>6</hp>
               <status>ready</status>
             </troop><troop>
               <type>apache</type>
-              <location>9,10</location>
-              <hp>4</hp>
-              <status>ready</status>
+              <location>11,8</location>
+              <hp>1</hp>
+              <status>exhausted</status>
+            </troop>
+      </troops><troops color="Blue">
+        <troop>
+              <type>artillery</type>
+              <location>16,8</location>
+              <hp>2</hp>
+              <status>exhausted</status>
             </troop>
       </troops>
       </save>

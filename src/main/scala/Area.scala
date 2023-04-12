@@ -9,7 +9,7 @@ abstract class Area(val tiles: Vector[Tile]):
     var redCount = 0
     var blueCount = 0
     var newController: Option[Player] = None
-    //check who has most unit in the area
+    //check who has most troops in the area
     for tile <- tiles do
       tile.troop match
         case Some(troop: Troop) =>
