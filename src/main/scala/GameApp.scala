@@ -16,7 +16,9 @@ import scala.util.Random
 
 object GameApp extends JFXApp3:
   val fileManager = FileManager()
-  val game = fileManager.loadSave("saveFile.xml")
+  val game = fileManager.loadSave("newGame_1.xml")
+  val redCpu: Option[AI] = Some(AI(game, RedPlayer))
+  val blueCpu: Option[AI] = Some(AI(game, BluePlayer))
   //resolution of tile
   val tileRes = 24
   val scaleBy = 1
@@ -35,7 +37,6 @@ object GameApp extends JFXApp3:
 
   //save game when closing GameApp
   override def stopApp() = fileManager.saveGame(game)
-
   def start(): Unit =
     val mapWidth = tileSize * game.gameLevel.gridWidth
     val mapHeight = tileSize * game.gameLevel.gridHeight
@@ -149,7 +150,7 @@ object GameApp extends JFXApp3:
 
     def createTroop(troop: Troop) =
       troop.initializeStats()
-      game.gameLevel.tileAt(troop.gridCoords).moveTo(troop) // saves troop to tile at it's grid coordinates
+      game.gameLevel.tileAt(troop.gridCoords).moveTo(troop) // saves troop to it's starting tile
       refreshTroopImages()
 
     def renderGameLevel() =
@@ -188,17 +189,26 @@ object GameApp extends JFXApp3:
       updateLines()
 
       //movement-range test
-      /*
       def paintText(gridCoords: (Int, Int), textToPaint: String) =
         val text = new Text(textToPaint):
-          font = new Font(20)
+          font = new Font(10)
           fill = Black
           x = gridToSceneCoordX(gridCoords)
           y = gridToSceneCoordY(gridCoords) +20
         tiles.children += text
-
-      val startTile = game.gameLevel.tileAt((18,18))
-      game.gameLevel.tileMovementCosts((startTile, 0), 5, TroopType.Human, Buffer[(Tile, Int)]()).foreach(a => paintText(a._1.coords, a._2.toString))
+      for x <- 0 until  game.gameLevel.gridWidth do
+        for y <- 0 until  game.gameLevel.gridHeight do
+          paintText((x, y), x + "," + y)
+      /*
+      val troopType = TroopType.Human
+      val startTile = game.gameLevel.tileAt((30,14))
+      val costs = Array.fill[Int](game.gameLevel.gridHeight, game.gameLevel.gridWidth)(250)
+      costs(startTile.coords._2).update(startTile.coords._1, 0)
+      val numbers = game.gameLevel.tileMoveFromCosts(startTile, troopType, costs)
+      val route = numbers.zipWithIndex
+        .flatMap(row => (row._1.zipWithIndex
+        .map(cell => (game.gameLevel.tileAt((cell._2, row._2)), cell._1)))).toVector
+      route.foreach(a => paintText(a._1.coords, a._2.toString))
       */
     end renderGameLevel
 
@@ -254,9 +264,9 @@ object GameApp extends JFXApp3:
                   menuElement.name match
                     case "Move" =>
                       game.currentAction = Moving(activeTile)
-                      troopMoveRange(activeTile).filter(_._1 != activeTile).foreach(a =>
-                        val highlightColor = if a._1.isPassable then LightBlue else Red
-                        highlightTile(a._1.coords, highlightColor))
+                      troopMoveRange(activeTroop).filter(_ != activeTile).foreach(a =>
+                        val highlightColor = if a.isPassable then LightBlue else Red
+                        highlightTile(a.coords, highlightColor))
                     case "Attack" =>
                       game.currentAction = Attacking(activeTile)
                       //highlight attack range red and enemy troops in range blue
@@ -276,13 +286,9 @@ object GameApp extends JFXApp3:
             //moves active troop if the tile clicked is legal for movement
             case Moving(activeTile) =>
               val movingTroop = activeTile.troop.get
-              if troopMoveRange(activeTile).exists(_._1.coords == gridCoords) && clickedTile.isPassable then
-                movingTroop.move(gridCoords) //updates moving troop's coords
-                clickedTile.moveTo(movingTroop) //stores troop to the new tile
-                activeTile.removeTroop() //removes troop from the old tile
-                //renders troop's position change
-                troops.children(movingTroop.imageViewIndex)
-                  .relocate(gridToSceneCoordX(movingTroop.gridCoords), gridToSceneCoordY(movingTroop.gridCoords))
+              if troopMoveRange(movingTroop).exists(_.coords == gridCoords) && clickedTile.isPassable then
+                movingTroop.move(clickedTile) //moves troop
+                renderMovement(movingTroop)
               removeFocus()
 
             case Attacking(activeTile) =>
@@ -290,24 +296,26 @@ object GameApp extends JFXApp3:
               val target = clickedTile.troop
               //check if clicked tile is in range and contains enemy troop
               if troopAttackRange(attackingTroop).contains(gridCoords) && target.nonEmpty && target.get.controller != game.gameState.actingPlayer then
-                attackingTroop.attack(clickedTile)
-                if target.get.stats(Stat.Hp) <= 0 then
-                  removeTroop(target.get, clickedTile)
+                //attack target and remove it if it dies
+                if attackingTroop.attack(target.get) then
+                  removeTroop(target.get)
               removeFocus()
 
             case BuildTroop(activeTile) =>
               BuildMenu.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
                 case Some(menuElement) =>
-                  buildTroop(menuElement.name, game.gameState.actingPlayer, activeTile.coords)
+                  buildTroop(menuElement.name, game.gameState.actingPlayer, activeTile)
                   removeFocus()
                 case None => removeFocus()
         else
           //check if advance turn was clicked
           if advanceTurnBtn.menuElements.exists(_.tryClickMenuElement((event.getX, event.getY))) then
-            game.gameState.advanceTurn()
-            gameInfo.updateTurn(game.gameState.actingPlayer.toString)
             removeFocus()
-            updateLines()
+            advanceTurn()
+            val cpu = if game.gameState.actingPlayer == RedPlayer then redCpu else blueCpu
+            cpu match
+              case Some(ai) => computerAct(ai)
+              case None =>
         }
       def removeFocus() =
         focusHL.children.clear()
@@ -319,33 +327,65 @@ object GameApp extends JFXApp3:
         menuUI.children.clear()
         menuUI.children += menu
 
-      def troopMoveRange(tile: Tile) =
-        game.gameLevel.tilesAtMovementRange(tile)
+      def troopMoveRange(troop: Troop) =
+        game.gameLevel.tilesAtMovementRange(troop)
 
       def troopAttackRange(troop: Troop) =
         game.gameLevel.coordsAtRange(troop.gridCoords, troop.stats(Stat.Rng))
 
-      def buildTroop(name: String, owner: Player, coords: (Int, Int)) =
+      def buildTroop(name: String, owner: Player, tile: Tile) =
+        val troopCount = game.gameLevel.troopCount
         val troop =
           name match
-            case "Solider" => Solider(owner, coords)
-            case "Sniper" => Sniper(owner, coords)
-            case "Tank" => Tank(owner, coords)
-            case "Artillery" => Artillery(owner, coords)
-            case "Apache" => Apache(owner, coords)
+            case "Solider" => Solider(owner, tile, troopCount)
+            case "Sniper" => Sniper(owner, tile, troopCount)
+            case "Tank" => Tank(owner, tile, troopCount)
+            case "Artillery" => Artillery(owner, tile, troopCount)
+            case "Apache" => Apache(owner, tile, troopCount)
         val endResources = owner.resources - troop.cost
         if endResources >= 0 then
           owner.resources = endResources
           gameInfo.updateResources(owner)
-          game.gameLevel.troops += troop
+          game.gameLevel.addTroop(troop)
           createTroop(troop)
-
-      //remove troop from game
-      def removeTroop(troop: Troop, tile: Tile) =
-        game.gameLevel.troops.remove(game.gameLevel.troops.indexOf(troop))
-        tile.removeTroop()
-        refreshTroopImages()
     end handleInput
+
+    def advanceTurn() =
+      game.gameState.advanceTurn()
+      gameInfo.updateTurn(game.gameState.actingPlayer.toString)
+      updateLines()
+
+    //renders troop's position change
+    def renderMovement(movingTroop: Troop) =
+      troops.children(movingTroop.imageViewIndex)
+        .relocate(gridToSceneCoordX(movingTroop.gridCoords), gridToSceneCoordY(movingTroop.gridCoords))
+
+    //remove troop from game
+    def removeTroop(troop: Troop) =
+      game.gameLevel.removeTroop(troop)
+      refreshTroopImages()
+
+    def computerAct(ai: AI) =
+      //build troops
+      ai.updateTroops()
+      ai.buildTroops()
+      refreshTroopImages()
+      gameInfo.updateResources(ai.player)
+      ai.commitToAreas()
+      //act with troops
+      for troop <- ai.ownTroops do
+        if game.gameLevel.tilesAtMovementRange(troop).nonEmpty then
+          ai.move(troop)
+          renderMovement(troop)
+        ai.attack(troop) match
+          case Some(target) =>
+            if troop.attack(target) then
+              removeTroop(target)
+              ai.updateTroops()
+          case None =>
+      ai.updateWeights()
+      //ai.areaWeights.foreach(a => println(a._1.tiles(0).coords.toString() +  a._2))
+
 
     renderGameLevel()
     handleInput()

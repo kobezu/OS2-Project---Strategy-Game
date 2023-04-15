@@ -1,13 +1,13 @@
 class GameState(game: Game):
   var actingPlayer: Player = RedPlayer
-  private val scoreToWin = 2
+  private val scoreToWin = 3
 
   def advanceRound() =
     RedPlayer.resources += 1
     BluePlayer.resources += 1
     game.gameLevel.troops.foreach(_.refresh())
     game.gameLevel.areas.foreach(_.updateControl())
-    checkWinner().foreach(player => println(player.toString + " is winner!"))
+    //checkWinner().foreach(player => println(player.toString + " is winner!"))
 
   def advanceTurn() =
     if actingPlayer == RedPlayer then

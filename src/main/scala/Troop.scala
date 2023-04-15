@@ -1,6 +1,8 @@
 import scala.collection.mutable.Buffer
 import Stat.*
 import TroopType.*
+import com.sun.prism.impl.Disposer.Target
+
 import scala.collection.mutable.Map
 
 enum TroopType:
@@ -9,12 +11,13 @@ enum TroopType:
 enum Stat:
   case Hp, Atk, Def, Mov, Rng
 
-trait Troop(val id: String, owner: Player, initialCoords: (Int, Int)):
-  var gridCoords = initialCoords
+trait Troop(val id: String, owner: Player, initialTile: Tile, n: Int):
+  var currentTile = initialTile
   var imageViewIndex = -1
   val controller = owner
   var hasMoved = false
   var exhausted = false
+  var isDead = false
   val range: Int
   val movement: Int
   val hp: Int
@@ -48,19 +51,26 @@ trait Troop(val id: String, owner: Player, initialCoords: (Int, Int)):
     for stat <- Stat.values do
       modifyStat(stat, baseStat(stat))
 
-  def takeDamage(amount: Int) =
+  //lower Hp and return remaining Hp
+  def takeDamage(amount: Int): Boolean =
     if amount > 0 then
       modifyStat(Hp, -amount)
-
+    if realStats(Hp) <= 0 then
+      isDead = true
+    isDead
+  
   def extraDamage(tile: Tile): Int
 
-  def attack(tile: Tile) =
-    val target = tile.troop.get
-    target.takeDamage(this.attackPower + extraDamage(tile) - target.defense)
-    exhaust()
+  def attackDamage(target: Troop): Int = this.stats(Atk) + extraDamage(target.currentTile) - target.stats(Def)
 
-  def move(movePos: (Int, Int)) = 
-    gridCoords = movePos
+  def attack(target: Troop): Boolean =
+    exhaust()
+    target.takeDamage(attackDamage(target))
+
+  def move(tile: Tile) =
+    currentTile.removeTroop()
+    currentTile = tile
+    tile.moveTo(this)
     hasMoved = true
 
   def exhaust() =
@@ -71,10 +81,18 @@ trait Troop(val id: String, owner: Player, initialCoords: (Int, Int)):
     hasMoved = false
     exhausted = false
 
+  def gridCoords = currentTile.coords
   //def ability(): Unit
+
+  //used by AI
+  //checks if this troop dies
+  def dies(damage: Int): Boolean = stats(Hp) - damage <= 0
+  //check how much damage target troop takes over its health
+  def wastedAttackDamage(target: Troop) =
+    attackDamage(target) - target.stats(Hp)
 end Troop
 
-case class Solider(owner: Player, initialCoords: (Int, Int)) extends Troop("solider", owner, initialCoords):
+case class Solider(owner: Player, initialTile: Tile, n: Int) extends Troop("solider", owner, initialTile, n):
   val range = 4
   val movement = 5
   val hp = 3
@@ -83,24 +101,24 @@ case class Solider(owner: Player, initialCoords: (Int, Int)) extends Troop("soli
   val troopType = Human
   val cost = 1
 
-  def extraDamage(tile: Tile) = if tile.distanceTo(gridCoords) < 3 then 2 else 0
+  def extraDamage(tile: Tile) = if tile.distanceTo(currentTile.coords) < 3 then 2 else 0
 end Solider
 
-case class Tank(owner: Player, initialCoords: (Int, Int)) extends Troop("tank", owner, initialCoords):
+case class Tank(owner: Player, initialTile: Tile, n: Int) extends Troop("tank", owner, initialTile, n):
   val range = 4
   val movement = 7
-  val hp = 6
+  val hp = 5
   val attackPower = 4
   val defense = 3
   val troopType = Vehicle
-  val cost = 4
+  val cost = 5
 
   def extraDamage(tile: Tile) = tile.troop match
     case Some(troop) => if troop.troopType == Vehicle then 2 else 0
     case None => 0
 end Tank
 
-case class Artillery(owner: Player, initialCoords: (Int, Int)) extends Troop("artillery", owner, initialCoords):
+case class Artillery(owner: Player, initialTile: Tile, n: Int) extends Troop("artillery", owner, initialTile, n):
   val range = 7
   val movement = 4
   val hp = 4
@@ -109,10 +127,10 @@ case class Artillery(owner: Player, initialCoords: (Int, Int)) extends Troop("ar
   val troopType = Vehicle
   val cost = 4
 
-  def extraDamage(tile: Tile) = if tile.distanceTo(gridCoords) > 4 then 3 else 0
+  def extraDamage(tile: Tile) = if tile.distanceTo(tile.coords) > 4 then 3 else 0
 end Artillery
 
-case class Sniper(owner: Player, initialCoords: (Int, Int)) extends Troop("sniper", owner, initialCoords):
+case class Sniper(owner: Player, initialTile: Tile, n: Int) extends Troop("sniper", owner, initialTile, n):
   val range = 6
   val movement = 3
   val hp = 3
@@ -126,7 +144,7 @@ case class Sniper(owner: Player, initialCoords: (Int, Int)) extends Troop("snipe
     case None => 0
 end Sniper
 
-case class Apache(owner: Player, initialCoords: (Int, Int)) extends Troop("apache", owner, initialCoords):
+case class Apache(owner: Player, initialTile: Tile, n: Int) extends Troop("apache", owner, initialTile, n):
   val range = 4
   val movement = 5
   val hp = 4
@@ -139,7 +157,7 @@ case class Apache(owner: Player, initialCoords: (Int, Int)) extends Troop("apach
 end Apache
 
 /*
-case class Fighter(owner: Player, initialCoords: (Int, Int)) extends Troop("fighter", owner, initialCoords):
+case class Fighter(owner: Player, initialTile: (Int, Int)) extends Troop("fighter", owner, initialTile):
   val range = 4
   val movement = 6
   val hp = 4
@@ -148,7 +166,7 @@ case class Fighter(owner: Player, initialCoords: (Int, Int)) extends Troop("figh
   val troopType = Flying
 end Fighter
 
-case class Medic(owner: Player, initialCoords: (Int, Int)) extends Troop("medic", owner, initialCoords):
+case class Medic(owner: Player, initialTile: (Int, Int)) extends Troop("medic", owner, initialTile):
   val range = 0
   val movement = 4
   val hp = 4
@@ -157,7 +175,7 @@ case class Medic(owner: Player, initialCoords: (Int, Int)) extends Troop("medic"
   val troopType = Human
 end Medic
 
-case class Mechanic(owner: Player, initialCoords: (Int, Int)) extends Troop("mechanic", owner, initialCoords):
+case class Mechanic(owner: Player, initialTile: (Int, Int)) extends Troop("mechanic", owner, initialTile):
   val range = 0
   val movement = 4
   val hp = 4
@@ -166,7 +184,7 @@ case class Mechanic(owner: Player, initialCoords: (Int, Int)) extends Troop("mec
   val troopType = Human
 end Mechanic
 
-case class Transport(owner: Player, initialCoords: (Int, Int)) extends Troop("transport", owner, initialCoords):
+case class Transport(owner: Player, initialTile: (Int, Int)) extends Troop("transport", owner, initialTile):
   val range = 0
   val movement = 6
   val hp = 5
@@ -175,7 +193,7 @@ case class Transport(owner: Player, initialCoords: (Int, Int)) extends Troop("tr
   val troopType = Vehicle
 end Transport
 
-case class Pontoon(owner: Player, initialCoords: (Int, Int)) extends Troop("pontoon", owner, initialCoords):
+case class Pontoon(owner: Player, initialTile: (Int, Int)) extends Troop("pontoon", owner, initialTile):
   val range = 0
   val movement = 4
   val hp = 3

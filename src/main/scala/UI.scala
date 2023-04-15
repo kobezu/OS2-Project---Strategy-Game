@@ -98,8 +98,10 @@ class TroopInfo(xPos: Int, yPos: Int, troop: Troop) extends InfoUI(xPos, yPos):
 
 class TileInfo(xPos: Int, yPos: Int, tile: Tile) extends InfoUI(xPos, yPos):
   val elementWidth = 200
-  val textElements = Vector(createTxtElement(0, 0, "Terrain: " + tile.id, txtColor))
-
+  val textElements = tile.troop match
+    case Some(troop) => Vector(createTxtElement(0, 0, "Terrain: " + tile.id, txtColor)) ++ TroopInfo(xPos-elementWidth, yPos, troop).textElements
+    case None => Vector(createTxtElement(0, 0, "Terrain: " + tile.id, txtColor))
+      
 class AreaInfo(xPos: Int, yPos: Int, area: Area) extends InfoUI(xPos, yPos):
   val elementWidth = 200
   val textElements = Vector(createTxtElement(0, 0, "Area Strength: " + area.strength, txtColor))

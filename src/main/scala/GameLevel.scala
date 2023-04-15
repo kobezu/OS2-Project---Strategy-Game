@@ -1,9 +1,12 @@
+import Stat.Hp
+
 import scala.collection.mutable.Buffer
 
 class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
-
+  var troopCount = 0
   val troops = Buffer[Troop]()
-
+  var redTroops = Vector[Troop]()
+  var blueTroops = Vector[Troop]()
   val areas = Buffer[Area]()
 
   def gridWidth: Int = tileGrid(0).size
@@ -21,36 +24,63 @@ class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
             coordsBuffer += ((xCoord, yCoord))
     coordsBuffer.toVector
 
-  //counts movement cost for each tile at given range from given tile
-  def tileMovementCosts(startTile: (Tile, Int), range: Int, troopType: TroopType, tiles: Buffer[(Tile, Int)]): Buffer[(Tile, Int)] =
-    val tilesWithCosts = tiles
+  //counts movement cost for moving to each tile at given range from given tile
+  def tileMoveToCosts(startTile: Tile, range: Int, troopType: TroopType, costs: Array[Array[Int]]): Array[Array[Int]] =
+    val costAtCoords = costs(startTile.coords._2)(startTile.coords._1)
     if range > 0 then
-      for adjacent <- adjacentTiles(startTile._1) do
-        val cost = startTile._2 + startTile._1.movementCost(troopType)
-        if !tilesWithCosts.exists(_._1 == adjacent) then
-          tilesWithCosts += ((adjacent, cost))
-          tilesWithCosts ++ tileMovementCosts((adjacent, cost), range-1, troopType, tilesWithCosts)
-        else
-          tilesWithCosts.find(_ == adjacent && _ > cost) match
-            case Some(a) =>
-              tilesWithCosts.update(tilesWithCosts.indexOf(a), (adjacent, cost))
-              tilesWithCosts ++ tileMovementCosts((adjacent, cost), range-1, troopType, tilesWithCosts)
-            case None =>
-    tilesWithCosts
+      for adjacent <- startTile.adjacentTiles do
+        val x = adjacent.coords._1
+        val y = adjacent.coords._2
+        val newCost = costAtCoords + startTile.movementCost(troopType)
+        val oldCost = costs(y)(x)
+        if newCost < oldCost then
+          costs(y)update(x, newCost)
+          tileMoveToCosts(adjacent, range-1, troopType, costs)
+    costs
 
   //returns each tile that troop can reach with given movement range
-  def tilesAtMovementRange(startTile: Tile) =
-    val troop = startTile.troop.get
-    tileMovementCosts((startTile, 0), troop.stats(Stat.Mov), troop.troopType, Buffer[(Tile, Int)]()).filterNot(_._2 > troop.stats(Stat.Mov))
+  def tilesAtMovementRange(troop: Troop) =
+    val costs = Array.fill[Int](gridHeight, gridWidth)(troop.stats(Stat.Mov) + 1)
+    costs(troop.gridCoords._2).update(troop.gridCoords._1, 0)
+    val numbers = tileMoveToCosts(troop.currentTile, troop.stats(Stat.Mov), troop.troopType, costs)
+    val route = numbers.zipWithIndex
+      .flatMap(row => (row._1.zipWithIndex
+      .map(cell => (tileAt((cell._2, row._2)), cell._1)))).toVector
+    route.filterNot(_._2 > troop.stats(Stat.Mov)).map(_._1)
 
   //returns the Tile-object at given grid-coordinates
   def tileAt(coords: (Int, Int)): Tile = tileGrid(coords._2)(coords._1)
 
-  def adjacentTiles(tile: Tile) =
-    val x = tile.coords._1
-    val y = tile.coords._2
-    Vector((x-1, y), (x+1, y), (x, y-1), (x, y+1))
-      .filterNot(c => c._1 < 0 | c._1 >= gridWidth | c._2 < 0 | c._2 >= gridHeight)
-      .map(tileAt(_))
-    
+  def addTroop(troop: Troop) =
+    troop.controller match
+      case RedPlayer => redTroops = redTroops ++ Vector(troop)
+      case BluePlayer => blueTroops = blueTroops ++ Vector(troop)
+    troops += troop
+    troopCount += 1
+
+  def removeTroop(troop: Troop) =
+    troop.controller match
+      case RedPlayer => redTroops = redTroops.filterNot(_ == troop)
+      case BluePlayer => blueTroops = blueTroops.filterNot(_ == troop)
+    troops -= troop
+    troop.currentTile.removeTroop()
+
+  def playerTroops(player: Player) =
+    player match
+      case RedPlayer => redTroops
+      case BluePlayer => blueTroops
+
+  //only used by AI
+  //counts movement cost for moving from each tile from given tile
+  def tileMoveFromCosts(startTile: Tile, troopType: TroopType, costs: Array[Array[Int]]): Array[Array[Int]] =
+    val costAtCoords = costs(startTile.coords._2)(startTile.coords._1)
+    for adjacent <- startTile.adjacentTiles do
+      val x = adjacent.coords._1
+      val y = adjacent.coords._2
+      val newCost = costAtCoords + adjacent.movementCost(troopType)
+      val oldCost = costs(y)(x)
+      if newCost < oldCost then
+        costs(y).update(x, newCost)
+        tileMoveFromCosts(adjacent, troopType, costs)
+    costs
 end GameLevel

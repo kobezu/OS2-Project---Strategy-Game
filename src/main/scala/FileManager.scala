@@ -29,6 +29,7 @@ class FileManager():
       numGrid.toVector.zipWithIndex
         .map(row => (row._1.zipWithIndex
         .map(cell => numberToTile(cell._1, (cell._2, row._2)))).toVector)
+
     //update loaded map
     loadedMap = mapName
     //return map
@@ -39,6 +40,18 @@ class FileManager():
     val saveFile = xml.XML.loadFile(("data\\text\\" + saveName))
     val game = Game(GameLevel(gameMapReader((saveFile \\ "game_map").text)))
     val gameState = saveFile \\ "game_state"
+
+    //initialize adjancent tiles in tiles
+    val gameLevel = game.gameLevel
+    def adjacentTiles(tile: Tile) =
+      val x = tile.coords._1
+      val y = tile.coords._2
+      Vector((x-1, y), (x+1, y), (x, y-1), (x, y+1))
+        .filterNot(c => c._1 < 0 | c._1 >= gameLevel.gridWidth | c._2 < 0 | c._2 >= gameLevel.gridHeight)
+        .map(gameLevel.tileAt(_))
+    for row <- gameLevel.tileGrid do
+      for tile <- row do
+        tile.adjacentTiles = adjacentTiles(tile)
 
     def playerColor(player: xml.NodeSeq) =
       (player \@ "color") match
@@ -64,15 +77,17 @@ class FileManager():
     //load troops
     for player <- (saveFile \\ "troops") do
       val color = playerColor(player)
+      val troops = gameLevel.playerTroops(color)
       for troopData <- player \\ "troop" do
-        val coords = locationDataToCoords((troopData \\ "location").text)
+        val troopCount = gameLevel.troopCount
+        val tile = game.gameLevel.tileAt(locationDataToCoords((troopData \\ "location").text))
         //make correct troop
         val troop = (troopData \\ "type").text match
-          case "solider" => Solider(color, coords)
-          case "tank" => Tank(color, coords)
-          case "artillery" => Artillery(color, coords)
-          case "apache" => Apache(color, coords)
-          case "sniper" => Sniper(color, coords)
+          case "solider" => Solider(color, tile, troopCount)
+          case "tank" => Tank(color, tile, troopCount)
+          case "artillery" => Artillery(color, tile, troopCount)
+          case "apache" => Apache(color, tile, troopCount)
+          case "sniper" => Sniper(color, tile, troopCount)
         //set troop hp and status
         (troopData \\ "hp").text match
           case "full" =>
@@ -82,7 +97,8 @@ class FileManager():
           case "moved" => troop.hasMoved = true
           case "exhausted" => troop.exhausted = true
         //add troop to GameLevel
-        game.gameLevel.troops += troop
+        gameLevel.addTroop(troop)
+
 
     //get list of tiles according to tile data
     def getTiles(tileData: xml.NodeSeq) =
@@ -156,7 +172,7 @@ class FileManager():
       data.toSeq
 
     def troopData(troops: Vector[Troop], player: Player) =
-      val playerTroops = game.gameLevel.troops.filter(_.controller == player)
+      val playerTroops = if player == RedPlayer then game.gameLevel.redTroops else game.gameLevel.blueTroops
       val data = Buffer[xml.Node]()
       for troop <- playerTroops do
         val status =

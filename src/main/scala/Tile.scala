@@ -1,5 +1,6 @@
 import TroopType.*
 import Stat.*
+import scala.collection.mutable.Buffer
 
 trait Tile(val id: String, gridCoords: (Int, Int)):
   val coords = gridCoords
@@ -7,6 +8,7 @@ trait Tile(val id: String, gridCoords: (Int, Int)):
   var isPassable = true
   val statModifier: Map[TroopType, Map[Stat, Int]]
   val movementCost: Map[TroopType, Int]
+  var adjacentTiles = Vector[Tile]()
 
   def moveTo(movingTroop: Troop): Unit =
     //gets correct modifiers for the troop
@@ -20,15 +22,16 @@ trait Tile(val id: String, gridCoords: (Int, Int)):
     isPassable = false
 
   def removeTroop(): Unit =
-    if troop.nonEmpty then
-      val leavingTroop = troop.get
-      statModifier.get(leavingTroop.troopType) match
-        case Some(modifiers) =>
-          for stat <- modifiers.keySet do
-            leavingTroop.modifyStat(stat, -modifiers(stat))
-        case None =>
-      troop = None
-      isPassable = true
+    troop match
+      case Some(leavingTroop) =>
+        statModifier.get(leavingTroop.troopType) match
+          case Some(modifiers) =>
+            for stat <- modifiers.keySet do
+              leavingTroop.modifyStat(stat, -modifiers(stat))
+          case None =>
+        troop = None
+        isPassable = true
+      case None => println("tried remove empty troop")
   
   def distanceTo(coords: (Int, Int)) =
     (gridCoords._1 - coords._1).abs + (gridCoords._2 - coords._2).abs
