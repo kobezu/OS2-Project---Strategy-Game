@@ -5,6 +5,7 @@ import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.Text
 import scalafx.scene.text.Font
 import Stat.*
+import javafx.scene.layout.StackPane
 
 class MenuElement(val name: String, elementCoords: (Double, Double), width: Int, height: Int):
   def tryClickMenuElement(clickCoords: (Double, Double)): Boolean =
@@ -23,16 +24,16 @@ abstract class UI(xPos: Int, yPos: Int) extends Pane:
     val bg = new Rectangle:
       width = elementWidth
       height = elementHeight
-      x = xPos + xn * elementWidth
-      y = yPos + yn * elementHeight
       fill = bgColor
     val text = new Text(name):
       font = new Font(20)
       fill = color
-      x = bg.getX + (elementWidth/3.0).toInt
-      y = bg.getY + (elementHeight/1.5).toInt
-    this.children += bg
-    this.children += text
+    val stack = new StackPane()
+    stack.setLayoutX(xPos + xn * elementWidth)
+    stack.setLayoutY(yPos + yn * elementHeight)
+    stack.getChildren.addAll(bg, text)
+    //this.children += bg
+    this.children += stack
     text
 
   def createMenuElement(n: Int, name: String) =
@@ -46,7 +47,34 @@ abstract class Menu(xPos: Int, yPos: Int) extends UI(xPos, yPos):
   val txtColor = White
   val textElements = Vector()
 
+//NewGame
+class Players(x: Int, y: Int) extends UI(x, y):
+  val elementWidth = 100
+  val elementHeight = 50
+  val bgColor = Gray
+  val txtColor = White
+  val menuElements = Vector(createMenuElement(0, "Change"), createMenuElement(2, "Change"))
+  val textElements = Vector(createTxtElement(2, 0, "Player", Red), createTxtElement(2, 2, "Player", Blue))
 
+  def change(player: Player) =
+    val text = playerOrCPU(player)
+    text.getText match
+      case "Player" => text.setText("CPU")
+      case "CPU" => text.setText("Player")
+  
+  def playerOrCPU(player: Player) =
+    player match
+      case RedPlayer => textElements(0)
+      case BluePlayer => textElements(1)
+
+class StartGameBtn(x: Int, y: Int) extends Menu(x, y):
+  val menuElements = Vector(createMenuElement(0, "Start Game"))
+
+//MainMenu
+class MainMenu(x: Int, y: Int) extends Menu(x, y):
+  val menuElements = Vector(createMenuElement(0, "New Game"), createMenuElement(2, "Load Game"))
+
+//GameScene
 object TroopMenu extends Menu(1000, 200):
   val menuElements = Vector(createMenuElement(0, "Move"), createMenuElement(1, "Attack"), createMenuElement(2, "Wait"))
 
@@ -79,7 +107,7 @@ class TurnSign(xPos: Int, yPos: Int, actingPlayer: Player) extends UI(xPos, yPos
 
 abstract class InfoUI(xPos: Int, yPos: Int) extends UI(xPos, yPos):
   val elementHeight = 48
-  val bgColor = White
+  val bgColor = LightCyan
   val txtColor = Black
   val menuElements = Vector()
 
@@ -101,7 +129,7 @@ class TileInfo(xPos: Int, yPos: Int, tile: Tile) extends InfoUI(xPos, yPos):
   val textElements = tile.troop match
     case Some(troop) => Vector(createTxtElement(0, 0, "Terrain: " + tile.id, txtColor)) ++ TroopInfo(xPos-elementWidth, yPos, troop).textElements
     case None => Vector(createTxtElement(0, 0, "Terrain: " + tile.id, txtColor))
-      
+
 class AreaInfo(xPos: Int, yPos: Int, area: Area) extends InfoUI(xPos, yPos):
   val elementWidth = 200
   val textElements = Vector(createTxtElement(0, 0, "Area Strength: " + area.strength, txtColor))

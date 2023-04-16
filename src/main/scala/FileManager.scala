@@ -1,6 +1,9 @@
+import javax.xml.stream.events.Attribute
 import scala.collection.mutable.Buffer
 import scala.io.Source
 import scala.xml
+import scala.xml.{Elem, Node, UnprefixedAttribute}
+import scala.xml.transform.RewriteRule
 
 class FileManager():
   private var loadedMap = ""
@@ -35,6 +38,42 @@ class FileManager():
     //return map
     map
 
+  //set player controllers for given file
+  def setPlayersControl(fileName: String, redCPU: Boolean, blueCPU: Boolean) =
+    val file = xml.XML.loadFile(("data\\text\\" + fileName))
+    val state = file \\ "game_state"
+
+    val redControl = if redCPU then "CPU" else "Player"
+    val blueControl = if blueCPU then "CPU" else "Player"
+
+    def getPlayerControl(node: Node) =
+      (node \@ "color") match
+        case "Red" => redControl
+        case "Blue" => blueControl
+
+    val modifiedPlayers = (state \\ "player").map(player =>
+      <player color={player \@ "color"}>
+        <control>{getPlayerControl(player)}</control>
+        {player \\ "resources"}
+      </player>)
+
+    val modifiedState =
+      <game_state>
+        {modifiedPlayers}
+        {state \\ "acting_player"}
+      </game_state>
+
+    val modifiedFile =
+      <save>
+        {file \\ "game_map"}
+        {modifiedState}
+        {file \\ "areas"}
+        {file \\ "troops"}
+      </save>
+
+    xml.XML.save("data\\text\\"+fileName, modifiedFile)
+
+
   //load given save
   def loadSave(saveName: String) =
     val saveFile = xml.XML.loadFile(("data\\text\\" + saveName))
@@ -61,9 +100,9 @@ class FileManager():
     def setUpPlayers(playerData: xml.NodeSeq) =
       var player = playerColor(playerData)
       player.resources = (playerData \\ "resources").text.toInt
-
-    //set up each player
-    (gameState \\ "player").foreach(setUpPlayers(_))
+      player.cpu = (playerData \\ "control").text match
+        case "CPU" => Some(AI(game, player))
+        case "Player" => None
 
     def locationDataToCoords(locData: String) =
       val coordsInArray = locData.split(",").map(_.toInt)
@@ -120,6 +159,10 @@ class FileManager():
       //set settlement strength
       settlement.strength = (settlementData \\ "strength").text.toInt
       game.gameLevel.areas += settlement
+
+    //set up each player
+    (gameState \\ "player").foreach(setUpPlayers(_))
+
     //return loaded game
     game
 
@@ -128,9 +171,11 @@ class FileManager():
     val gameState =
       <game_state>
         <player color="Red">
+          <control>{if RedPlayer.isCPU then "CPU" else "Player"}</control>
           <resources>{RedPlayer.resources}</resources>
         </player>
         <player color="Blue">
+          <control>{if BluePlayer.isCPU then "CPU" else "Player"}</control>
           <resources>{BluePlayer.resources}</resources>
         </player>
         <acting_player>{game.gameState.actingPlayer.toString}</acting_player>
@@ -172,7 +217,7 @@ class FileManager():
       data.toSeq
 
     def troopData(troops: Vector[Troop], player: Player) =
-      val playerTroops = if player == RedPlayer then game.gameLevel.redTroops else game.gameLevel.blueTroops
+      val playerTroops = game.gameLevel.playerTroops(player)
       val data = Buffer[xml.Node]()
       for troop <- playerTroops do
         val status =

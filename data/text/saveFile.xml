@@ -2,12 +2,14 @@
         <game_map>map_1.txt</game_map>
         <game_state>
         <player color="Red">
+          <control>CPU</control>
           <resources>2</resources>
         </player>
         <player color="Blue">
-          <resources>3</resources>
+          <control>CPU</control>
+          <resources>2</resources>
         </player>
-        <acting_player>Red</acting_player>
+        <acting_player>Blue</acting_player>
       </game_state>
         <areas>
         <base color="Red">
@@ -20,7 +22,7 @@
         <tiles>
         <tile>59,20</tile><tile>60,20</tile><tile>61,20</tile><tile>62,20</tile><tile>63,20</tile><tile>59,21</tile><tile>60,21</tile><tile>61,21</tile><tile>62,21</tile><tile>63,21</tile><tile>59,22</tile><tile>60,22</tile><tile>61,22</tile><tile>62,22</tile><tile>63,22</tile><tile>59,23</tile><tile>60,23</tile><tile>61,23</tile><tile>62,23</tile><tile>63,23</tile><tile>59,24</tile><tile>60,24</tile><tile>61,24</tile><tile>62,24</tile><tile>63,24</tile><tile>59,25</tile><tile>60,25</tile><tile>61,25</tile><tile>62,25</tile><tile>63,25</tile><tile>59,26</tile><tile>60,26</tile><tile>61,26</tile><tile>62,26</tile><tile>63,26</tile><tile>59,27</tile><tile>60,27</tile><tile>61,27</tile><tile>62,27</tile><tile>63,27</tile>
       </tiles>
-        <strength>0</strength>
+        <strength>3</strength>
       </base>
         <settlement>
               <tiles>
@@ -44,7 +46,7 @@
               <tiles>
         <tile>11,27</tile><tile>12,27</tile><tile>13,27</tile><tile>11,28</tile><tile>12,28</tile><tile>13,28</tile><tile>11,29</tile><tile>12,29</tile><tile>13,29</tile>
       </tiles>
-              <controller>Red</controller>
+              <controller>Blue</controller>
               <strength>3</strength>
             </settlement><settlement>
               <tiles>
@@ -62,7 +64,7 @@
               <tiles>
         <tile>35,34</tile><tile>36,34</tile><tile>37,34</tile><tile>35,35</tile><tile>36,35</tile><tile>37,35</tile><tile>35,36</tile><tile>36,36</tile><tile>37,36</tile>
       </tiles>
-              <controller>Red</controller>
+              <controller>Blue</controller>
               <strength>3</strength>
             </settlement><settlement>
               <tiles>
@@ -80,7 +82,7 @@
               <tiles>
         <tile>29,24</tile><tile>30,24</tile><tile>29,25</tile><tile>30,25</tile>
       </tiles>
-              <controller>Red</controller>
+              <controller>Blue</controller>
               <strength>3</strength>
             </settlement><settlement>
               <tiles>
@@ -92,161 +94,126 @@
       </areas>
         <troops color="Red">
         <troop>
+              <type>solider</type>
+              <location>2,11</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
               <type>tank</type>
-              <location>0,13</location>
-              <hp>6</hp>
-              <status>moved</status>
+              <location>1,16</location>
+              <hp>5</hp>
+              <status>ready</status>
             </troop><troop>
               <type>solider</type>
-              <location>0,14</location>
-              <hp>1</hp>
-              <status>moved</status>
+              <location>1,10</location>
+              <hp>3</hp>
+              <status>ready</status>
             </troop><troop>
-              <type>sniper</type>
+              <type>tank</type>
               <location>12,3</location>
-              <hp>3</hp>
-              <status>moved</status>
+              <hp>5</hp>
+              <status>ready</status>
             </troop><troop>
-              <type>apache</type>
+              <type>tank</type>
+              <location>11,3</location>
+              <hp>5</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
               <location>11,2</location>
-              <hp>4</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>sniper</type>
-              <location>11,28</location>
               <hp>3</hp>
-              <status>moved</status>
+              <status>ready</status>
             </troop><troop>
-              <type>apache</type>
-              <location>12,27</location>
+              <type>artillery</type>
+              <location>26,3</location>
               <hp>4</hp>
-              <status>moved</status>
+              <status>ready</status>
             </troop><troop>
               <type>tank</type>
               <location>27,2</location>
-              <hp>3</hp>
-              <status>moved</status>
+              <hp>5</hp>
+              <status>ready</status>
             </troop><troop>
               <type>apache</type>
-              <location>29,25</location>
-              <hp>1</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>artillery</type>
-              <location>28,25</location>
+              <location>26,2</location>
               <hp>4</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>artillery</type>
-              <location>29,24</location>
-              <hp>4</hp>
-              <status>exhausted</status>
+              <status>ready</status>
             </troop><troop>
               <type>tank</type>
-              <location>29,26</location>
-              <hp>3</hp>
-              <status>moved</status>
+              <location>26,1</location>
+              <hp>5</hp>
+              <status>ready</status>
             </troop><troop>
-              <type>tank</type>
-              <location>21,11</location>
-              <hp>6</hp>
-              <status>moved</status>
+              <type>artillery</type>
+              <location>20,11</location>
+              <hp>4</hp>
+              <status>ready</status>
             </troop><troop>
               <type>tank</type>
               <location>20,10</location>
               <hp>5</hp>
-              <status>moved</status>
+              <status>ready</status>
             </troop><troop>
               <type>artillery</type>
-              <location>19,11</location>
-              <hp>2</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>artillery</type>
-              <location>37,35</location>
+              <location>21,11</location>
               <hp>4</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>tank</type>
-              <location>59,23</location>
-              <hp>4</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>tank</type>
-              <location>36,35</location>
-              <hp>6</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>apache</type>
-              <location>36,33</location>
-              <hp>2</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>solider</type>
-              <location>36,34</location>
-              <hp>3</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>tank</type>
-              <location>36,36</location>
-              <hp>6</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>artillery</type>
-              <location>7,16</location>
-              <hp>4</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>sniper</type>
-              <location>15,14</location>
-              <hp>3</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>solider</type>
-              <location>24,18</location>
-              <hp>3</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>artillery</type>
-              <location>15,16</location>
-              <hp>4</hp>
-              <status>moved</status>
-            </troop><troop>
-              <type>solider</type>
-              <location>24,20</location>
-              <hp>3</hp>
-              <status>moved</status>
+              <status>exhausted</status>
             </troop><troop>
               <type>sniper</type>
               <location>0,10</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>artillery</type>
+              <location>2,10</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>artillery</type>
+              <location>3,10</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>4,10</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>0,11</location>
               <hp>3</hp>
               <status>ready</status>
             </troop>
       </troops><troops color="Blue">
         <troop>
               <type>tank</type>
-              <location>43,27</location>
-              <hp>6</hp>
-              <status>ready</status>
-            </troop><troop>
-              <type>solider</type>
               <location>42,27</location>
-              <hp>3</hp>
+              <hp>5</hp>
               <status>ready</status>
             </troop><troop>
               <type>artillery</type>
-              <location>51,34</location>
+              <location>42,26</location>
               <hp>4</hp>
               <status>ready</status>
             </troop><troop>
               <type>solider</type>
-              <location>51,36</location>
+              <location>61,20</location>
               <hp>3</hp>
               <status>ready</status>
             </troop><troop>
               <type>sniper</type>
-              <location>51,35</location>
+              <location>43,27</location>
               <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>sniper</type>
+              <location>51,34</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>artillery</type>
+              <location>52,35</location>
+              <hp>4</hp>
               <status>ready</status>
             </troop><troop>
               <type>solider</type>
@@ -254,29 +221,124 @@
               <hp>3</hp>
               <status>ready</status>
             </troop><troop>
-              <type>sniper</type>
-              <location>52,9</location>
+              <type>apache</type>
+              <location>51,8</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>41,26</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>apache</type>
+              <location>51,35</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>50,35</location>
               <hp>3</hp>
               <status>ready</status>
             </troop><troop>
               <type>solider</type>
-              <location>50,9</location>
+              <location>60,20</location>
               <hp>3</hp>
               <status>ready</status>
             </troop><troop>
-              <type>tank</type>
-              <location>33,12</location>
-              <hp>1</hp>
+              <type>artillery</type>
+              <location>35,34</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>sniper</type>
+              <location>36,34</location>
+              <hp>3</hp>
               <status>ready</status>
             </troop><troop>
               <type>apache</type>
-              <location>31,19</location>
+              <location>36,35</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>tank</type>
+              <location>34,12</location>
+              <hp>5</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>tank</type>
+              <location>33,13</location>
+              <hp>2</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>32,18</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>32,19</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>31,18</location>
+              <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>artillery</type>
+              <location>29,23</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>artillery</type>
+              <location>29,26</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>solider</type>
+              <location>29,24</location>
+              <hp>2</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>apache</type>
+              <location>30,25</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>tank</type>
+              <location>29,25</location>
+              <hp>5</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>tank</type>
+              <location>12,28</location>
+              <hp>5</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>tank</type>
+              <location>12,27</location>
+              <hp>5</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>sniper</type>
+              <location>28,11</location>
               <hp>2</hp>
               <status>ready</status>
             </troop><troop>
               <type>sniper</type>
-              <location>31,13</location>
+              <location>59,20</location>
               <hp>3</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>apache</type>
+              <location>62,20</location>
+              <hp>4</hp>
+              <status>ready</status>
+            </troop><troop>
+              <type>artillery</type>
+              <location>63,20</location>
+              <hp>4</hp>
               <status>ready</status>
             </troop>
       </troops>

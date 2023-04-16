@@ -2,12 +2,14 @@ import scalafx.scene.paint.Color
 import scalafx.scene.paint.Color.*
 
 sealed abstract class Player:
-  //val base =
+  var cpu: Option[AI] = None
   val color: Color
   var baseCaptured = false
-  var settlements = 0
   var resources = 10
+  var settlements = 0
   override def toString: String
+  
+  def isCPU = cpu.nonEmpty
 end Player
 
 object RedPlayer extends Player:

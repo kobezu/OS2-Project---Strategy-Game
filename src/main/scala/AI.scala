@@ -1,5 +1,3 @@
-import GameApp.game
-
 import scala.util.Random
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.Map
@@ -70,8 +68,6 @@ class AI(game: Game, val player: Player):
     for area <- gameLevel.areas.drop(2) do
       areaWeights(area) = weightArea(area)
 
-  def reinforceAreas() = ???
-
   def tryCommitToArea(): Boolean =
     val commitedAreas = commitsToAreas.filter(_._2.nonEmpty).keySet
     //get uncommited area with lowest enemy weight and highest own weight
@@ -119,10 +115,12 @@ class AI(game: Game, val player: Player):
   def move(troop: Troop) =
     troopsWithCommits(troop) match
       case Some(area) =>
-        val endTile = getMoveTile(troop, area)
-        endTile match
-          case Some(tile) => troop.move(tile)
-          case None =>
+        //check if troop is already in destination
+        if !area.tiles.contains(troop.currentTile) then
+          val endTile = getMoveTile(troop, area)
+          endTile match
+            case Some(tile) => troop.move(tile)
+            case None =>
       case None =>
 
   //return target that troop will attack wrapped in Option

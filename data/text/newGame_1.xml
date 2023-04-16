@@ -1,15 +1,16 @@
 <save>
-	<game_map>map_1.txt</game_map>
-	<game_state>
-		<player color="Red">
-			<resources>10</resources>
-		</player>
-		<player color="Blue">
-			<resources>10</resources>
-		</player>
-		<acting_player>Red</acting_player>
-	</game_state>
-	<areas>
+        <game_map>map_1.txt</game_map>
+        <game_state>
+        <player color="Red">
+        <control>CPU</control>
+        <resources>10</resources>
+      </player><player color="Blue">
+        <control>CPU</control>
+        <resources>10</resources>
+      </player>
+        <acting_player>Red</acting_player>
+      </game_state>
+        <areas>
 		<base color="Red">
 			<tiles>
 				<tile>0,10</tile><tile>1,10</tile><tile>2,10</tile><tile>3,10</tile><tile>4,10</tile>
@@ -129,7 +130,7 @@
 			<strength>1</strength>
 		</settlement>
 	</areas>
-	<troops color="Red">
+        <troops color="Red">
 		<troop>
 			<type>solider</type>
 			<location>2,11</location>
@@ -148,8 +149,7 @@
 			<hp>full</hp>
 			<status>ready</status>
 		</troop>
-	</troops>
-	<troops color="Blue">
+	</troops><troops color="Blue">
 		<troop>
 			<type>tank</type>
 			<location>62,21</location>
@@ -169,4 +169,4 @@
 			<status>ready</status>
 		</troop>
 	</troops>
-</save>
+      </save>

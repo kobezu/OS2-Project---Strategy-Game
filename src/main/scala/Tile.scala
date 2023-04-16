@@ -31,7 +31,7 @@ trait Tile(val id: String, gridCoords: (Int, Int)):
           case None =>
         troop = None
         isPassable = true
-      case None => println("tried remove empty troop")
+      case None =>
   
   def distanceTo(coords: (Int, Int)) =
     (gridCoords._1 - coords._1).abs + (gridCoords._2 - coords._2).abs
