@@ -55,6 +55,7 @@ class Settlement(tiles: Vector[Tile]) extends Area(tiles):
           controller = newController
       case None =>
         controller.foreach(_.settlements -= 1)
+        controller = None
 
 
 class Base(tiles: Vector[Tile], owner: Player) extends Area(tiles):
