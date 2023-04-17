@@ -16,3 +16,17 @@ I have been busy with other school work.
 3.4
 The project still hasn't progressed as I have been extremely busy with school work.
 I barely have any school work this and next week, so the plan is to finish the project then.
+
+17.4
+Implemented classes GameState, Player, FileManager, AI.
+Updated classes Tile and Troop.
+Added main menu.
+
+New and updated classes have been tested through UI, and they seem to be working as intended.
+
+There were some difficult errors with AI, but they have been resolved.
+
+Workload has been maybe 60 hours.
+
+I think I'm on pace finishing the project in time, but I don't have time to implement or refine
+all things I want. I still have to make game-end screen and would like to improve the UI.
