@@ -1,3 +1,4 @@
+import javafx.scene.layout.StackPane
 import scalafx.scene.layout.Background
 import scalafx.scene.paint.Color
 import scalafx.scene.Scene
@@ -6,10 +7,11 @@ import scalafx.scene.layout.Pane
 import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, Text}
+
 import java.io.FileInputStream
 import scala.util.Random
 
-class GameScene(root: Pane, game: Game) extends Scene(parent = root){
+class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) extends Scene(parent = root){
   //resolution of tile
   val tileSize = 24
   //convert scene coords to grid coords
@@ -166,107 +168,108 @@ class GameScene(root: Pane, game: Game) extends Scene(parent = root){
   //listens for mouse clicks and then does things according to the mouse position and what is current action
   def handleInput() =
     root.onMouseClicked = event => {
-      val actingPlayer = game.gameState.actingPlayer
-      //check if click was inside map
-      if event.getY < mapHeight && event.getX < mapWidth then
-        val gridCoords = sceneToGridCoords(event.getX, event.getY)
-        val clickedTile = game.gameLevel.tileAt(gridCoords)
+      if game.gameState.winner.isEmpty then
+        val actingPlayer = game.gameState.actingPlayer
+        //check if click was inside map
+        if event.getY < mapHeight && event.getX < mapWidth then
+          val gridCoords = sceneToGridCoords(event.getX, event.getY)
+          val clickedTile = game.gameLevel.tileAt(gridCoords)
 
-        game.currentAction match
-          //makes clicked tile the focus
-          case NoFocus() | TileFocus(_) =>
-            focusHL.children.clear()
-            infoUI.children.clear()
-            highlightTile(gridCoords, Black)
-            infoUI.children += TileInfo(mapWidth - 600, mapHeight, clickedTile)
-            //display area-info if clicked tile is in area
-            game.gameLevel.areas.find(_.tiles.contains(clickedTile)) match
-              case Some(area: Area) => infoUI.children += AreaInfo(mapWidth - 800, mapHeight, area)
+          game.currentAction match
+            //makes clicked tile the focus
+            case NoFocus() | TileFocus(_) =>
+              focusHL.children.clear()
+              infoUI.children.clear()
+              highlightTile(gridCoords, Black)
+              infoUI.children += TileInfo(mapWidth - 600, mapHeight, clickedTile)
+              //display area-info if clicked tile is in area
+              game.gameLevel.areas.find(_.tiles.contains(clickedTile)) match
+                case Some(area: Area) => infoUI.children += AreaInfo(mapWidth - 800, mapHeight, area)
+                case None =>
+              //check if clicked tile contains non-exhausted troop that acting non-cpu player controls
+              val clickedTroop = clickedTile.troop
+              if clickedTroop.nonEmpty then
+                infoUI.children += TroopInfo(0, mapHeight, clickedTroop.get)
+                if !actingPlayer.isCPU && !clickedTroop.get.exhausted && clickedTroop.get.controller == actingPlayer then
+                  game.currentAction = TroopFocus(clickedTile)
+                  if clickedTroop.get.hasMoved then
+                    addPopUp(TroopAttackMenu)
+                  else
+                    addPopUp(TroopMenu)
+              else
+                //check if clicked tile is in acting player base
+                game.gameLevel.areas.take(2).find(_.tiles.contains(clickedTile)) match
+                  case Some(base: Base) =>
+                    if !actingPlayer.isCPU && base.controller.contains(actingPlayer) then
+                      addPopUp(BuildMenu)
+                      game.currentAction = BuildTroop(clickedTile)
+                    else game.currentAction = TileFocus(clickedTile)
+                  case _ => game.currentAction = TileFocus(clickedTile)
+
+            //changes current action based on what menu element was clicked
+            case TroopFocus(activeTile) =>
+              val activeTroop = activeTile.troop.get
+              val currentUI =
+                if activeTroop.hasMoved then
+                  TroopAttackMenu
+                else TroopMenu
+              currentUI.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
+                case Some(menuElement) =>
+                  menuUI.children.clear()
+                  menuElement.name match
+                    case "Move" =>
+                      game.currentAction = Moving(activeTile)
+                      troopMoveRange(activeTroop).filter(_ != activeTile).foreach(a =>
+                        val highlightColor = if a.isPassable then LightBlue else Red
+                        highlightTile(a.coords, highlightColor))
+                    case "Attack" =>
+                      game.currentAction = Attacking(activeTile)
+                      //highlight attack range red and enemy troops in range blue
+                      for coord <- troopAttackRange(activeTroop) do
+                        val tile = game.gameLevel.tileAt(coord)
+                        val critical = activeTroop.extraDamage(tile) > 0
+                        val color = tile.troop match
+                            case None => if critical then Red else Orange
+                            case Some(troop: Troop) => if troop.controller == activeTroop.controller then
+                              Orange else if critical then Blue else DarkCyan
+                        highlightTile(coord, color)
+                    case "Wait" =>
+                      removeFocus()
+                      activeTroop.exhaust()
+                case None => removeFocus()
+
+            //moves active troop if the tile clicked is legal for movement
+            case Moving(activeTile) =>
+              val movingTroop = activeTile.troop.get
+              if troopMoveRange(movingTroop).exists(_.coords == gridCoords) && clickedTile.isPassable then
+                movingTroop.move(clickedTile) //moves troop
+                renderMovement(movingTroop)
+              removeFocus()
+
+            case Attacking(activeTile) =>
+              val attackingTroop = activeTile.troop.get
+              val target = clickedTile.troop
+              //check if clicked tile is in range and contains enemy troop
+              if troopAttackRange(attackingTroop).contains(gridCoords) && target.nonEmpty && target.get.controller != actingPlayer then
+                //attack target and remove it if it dies
+                if attackingTroop.attack(target.get) then
+                  removeTroop(target.get)
+              removeFocus()
+
+            case BuildTroop(activeTile) =>
+              BuildMenu.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
+                case Some(menuElement) =>
+                  buildTroop(menuElement.name, actingPlayer, activeTile)
+                  removeFocus()
+                case None => removeFocus()
+        else
+          //check if advance turn was clicked
+          if advanceTurnBtn.menuElements.exists(_.tryClickMenuElement((event.getX, event.getY))) then
+            removeFocus()
+            actingPlayer.cpu match
+              case Some(ai) => computerAct(ai)
               case None =>
-            //check if clicked tile contains non-exhausted troop that acting non-cpu player controls
-            val clickedTroop = clickedTile.troop
-            if clickedTroop.nonEmpty then
-              infoUI.children += TroopInfo(0, mapHeight, clickedTroop.get)
-              if !actingPlayer.isCPU && !clickedTroop.get.exhausted && clickedTroop.get.controller == actingPlayer then
-                game.currentAction = TroopFocus(clickedTile)
-                if clickedTroop.get.hasMoved then
-                  addPopUp(TroopAttackMenu)
-                else
-                  addPopUp(TroopMenu)
-            else
-              //check if clicked tile is in acting player base
-              game.gameLevel.areas.take(2).find(_.tiles.contains(clickedTile)) match
-                case Some(base: Base) =>
-                  if !actingPlayer.isCPU && base.controller.contains(actingPlayer) then
-                    addPopUp(BuildMenu)
-                    game.currentAction = BuildTroop(clickedTile)
-                  else game.currentAction = TileFocus(clickedTile)
-                case None => game.currentAction = TileFocus(clickedTile)
-
-          //changes current action based on what menu element was clicked
-          case TroopFocus(activeTile) =>
-            val activeTroop = activeTile.troop.get
-            val currentUI =
-              if activeTroop.hasMoved then
-                TroopAttackMenu
-              else TroopMenu
-            currentUI.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
-              case Some(menuElement) =>
-                menuUI.children.clear()
-                menuElement.name match
-                  case "Move" =>
-                    game.currentAction = Moving(activeTile)
-                    troopMoveRange(activeTroop).filter(_ != activeTile).foreach(a =>
-                      val highlightColor = if a.isPassable then LightBlue else Red
-                      highlightTile(a.coords, highlightColor))
-                  case "Attack" =>
-                    game.currentAction = Attacking(activeTile)
-                    //highlight attack range red and enemy troops in range blue
-                    for coord <- troopAttackRange(activeTroop) do
-                      val tile = game.gameLevel.tileAt(coord)
-                      val critical = activeTroop.extraDamage(tile) > 0
-                      val color = tile.troop match
-                          case None => if critical then Red else Orange
-                          case Some(troop: Troop) => if troop.controller == activeTroop.controller then
-                            Orange else if critical then Blue else DarkCyan
-                      highlightTile(coord, color)
-                  case "Wait" =>
-                    removeFocus()
-                    activeTroop.exhaust()
-              case None => removeFocus()
-
-          //moves active troop if the tile clicked is legal for movement
-          case Moving(activeTile) =>
-            val movingTroop = activeTile.troop.get
-            if troopMoveRange(movingTroop).exists(_.coords == gridCoords) && clickedTile.isPassable then
-              movingTroop.move(clickedTile) //moves troop
-              renderMovement(movingTroop)
-            removeFocus()
-
-          case Attacking(activeTile) =>
-            val attackingTroop = activeTile.troop.get
-            val target = clickedTile.troop
-            //check if clicked tile is in range and contains enemy troop
-            if troopAttackRange(attackingTroop).contains(gridCoords) && target.nonEmpty && target.get.controller != actingPlayer then
-              //attack target and remove it if it dies
-              if attackingTroop.attack(target.get) then
-                removeTroop(target.get)
-            removeFocus()
-
-          case BuildTroop(activeTile) =>
-            BuildMenu.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
-              case Some(menuElement) =>
-                buildTroop(menuElement.name, actingPlayer, activeTile)
-                removeFocus()
-              case None => removeFocus()
-      else
-        //check if advance turn was clicked
-        if advanceTurnBtn.menuElements.exists(_.tryClickMenuElement((event.getX, event.getY))) then
-          removeFocus()
-          actingPlayer.cpu match
-            case Some(ai) => computerAct(ai)
-            case None =>
-          advanceTurn()
+            advanceTurn()
       }
     def removeFocus() =
       focusHL.children.clear()
@@ -305,6 +308,9 @@ class GameScene(root: Pane, game: Game) extends Scene(parent = root){
     game.gameState.advanceTurn()
     gameInfo.updateTurn(game.gameState.actingPlayer.toString)
     updateLines()
+    game.gameState.winner match
+      case Some(winner) => gameEnd(winner)
+      case None =>
 
   //renders troop's position change
   def renderMovement(movingTroop: Troop) =
@@ -335,6 +341,19 @@ class GameScene(root: Pane, game: Game) extends Scene(parent = root){
             ai.updateTroops()
         case None =>
     ai.updateWeights()
+
+  def gameEnd(winner: Player) =
+    val bg = new Rectangle:
+      width = winWidth
+      height = winHeight
+      fill.set(Black.opacity(0.8))
+    val text = new Text(winner.toString + " is winner!"):
+      font = new Font(50)
+      fill = winner.color
+    val gameEndScreen = new StackPane()
+    gameEndScreen.getChildren.addAll(bg, text)
+    root.children += gameEndScreen
+
 
   renderGameLevel()
   handleInput()

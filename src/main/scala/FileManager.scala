@@ -261,4 +261,10 @@ class FileManager():
 
     xml.XML.save("data\\text\\saveFile.xml", saveData)
 
+  //clears given save
+  def clearSave(saveName: String) = xml.XML.save("data\\text\\" + saveName, <save></save>)
+
+  //checks if given save is empty
+  def nonEmptySave(saveName: String) = xml.XML.loadFile(("data\\text\\" + saveName)).head.text.nonEmpty
+
 end FileManager

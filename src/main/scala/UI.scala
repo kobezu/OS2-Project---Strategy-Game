@@ -146,7 +146,7 @@ class GameInfo(xPos: Int, yPos: Int, actingPlayer: Player) extends InfoUI(xPos, 
   def updateResources(player: Player) =
     val index = if player == RedPlayer then 2 else 4
     textElements(index).setText("Resources: " + player.resources)
-
+    
   def updateTurn(actingPlayer: String) =
     textElements(0).setText("Turn: " + actingPlayer)
     textElements(1).setText("Score: " + RedPlayer.settlements)

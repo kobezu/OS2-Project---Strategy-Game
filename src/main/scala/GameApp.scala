@@ -20,7 +20,12 @@ object GameApp extends JFXApp3:
   var loadedGame: Option[Game] = None
   val screenSize: Dimension = Toolkit.getDefaultToolkit.getScreenSize
   //save game when closing GameApp
-  override def stopApp() = loadedGame.foreach(fileManager.saveGame(_))
+  override def stopApp() =
+    if loadedGame.nonEmpty then
+      if loadedGame.get.gameState.winner.isEmpty then
+        loadedGame.foreach(fileManager.saveGame(_))
+      else fileManager.clearSave("saveFile.xml")
+
   def start(): Unit =
     val menuWidth = 500
     val menuHeight = 600
@@ -51,7 +56,7 @@ object GameApp extends JFXApp3:
             stage.setWidth(width)
             stage.setHeight(height)
             stage.centerOnScreen()
-            stage.scene = GameScene(Pane(), game)
+            stage.scene = GameScene(Pane(), game, width, height)
             loadedGame = Some(game)
           }))
 
@@ -62,9 +67,9 @@ object GameApp extends JFXApp3:
       root_newGame.background = Background.fill(LightCyan)
       val players = Players(92, menuHeight-550)
       root_newGame.children += players
-      val startGameBtn = StartGameBtn((menuWidth / 2 - 200/2), menuHeight - 250)
+      val startGameBtn = StartGameBtn((menuWidth / 2 - 100), menuHeight - 250)
       root_newGame.children += startGameBtn
-      
+
       def handleInput() =
         root_newGame.onMouseClicked = event => {
           val x = event.getX
@@ -100,7 +105,8 @@ object GameApp extends JFXApp3:
           mainMenu.menuElements.find(_.tryClickMenuElement((x, y))) match
             case Some(menuElement) => menuElement.name match
               case "New Game" => stage.scene = newGameScreen
-              case "Load Game" => startGame("saveFile.xml")
+              case "Load Game" =>
+                if fileManager.nonEmptySave("saveFile.xml") then startGame("saveFile.xml")
             case None =>
         }
 
