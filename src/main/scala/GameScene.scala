@@ -7,13 +7,12 @@ import scalafx.scene.layout.Pane
 import scalafx.scene.paint.Color.*
 import scalafx.scene.shape.Rectangle
 import scalafx.scene.text.{Font, Text}
-
 import java.io.FileInputStream
 import scala.util.Random
 
 class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) extends Scene(parent = root){
   //resolution of tile
-  val tileSize = 24
+  private val tileSize = 24
   //convert scene coords to grid coords
   def sceneToGridCoords(x:Double, y: Double): (Int, Int) = ((x/tileSize).toInt, (y/tileSize).toInt)
   //convert grid coords to scene coords
@@ -23,34 +22,34 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
   def getTileImage(tileId: String) = Image(FileInputStream("data\\images\\tiles\\" + tileId + ".png"))
   def getTroopImage(troop: Troop) = Image(FileInputStream("data\\images\\troops\\" + troop.id + "_" + troop.controller.toString.toLowerCase + ".png"))
 
-  val mapWidth = tileSize * game.gameLevel.gridWidth
-  val mapHeight = tileSize * game.gameLevel.gridHeight
+  private val mapWidth = tileSize * game.gameLevel.gridWidth
+  private val mapHeight = tileSize * game.gameLevel.gridHeight
 
   root.background = Background.fill(LightCyan)
   //initialize branches of root
-  val tiles = Pane()
-  val troops = Pane()
-  val userInterface = Pane()
-  val highlights = Pane()
+  private val tiles = Pane()
+  private val troops = Pane()
+  private val userInterface = Pane()
+  private val highlights = Pane()
   root.children += tiles
   root.children += troops
   root.children += highlights
   root.children += userInterface
   //initialize branches of highlight
-  val focusHL = Pane()
-  val areaHL = Pane()
+  private val focusHL = Pane()
+  private val areaHL = Pane()
   highlights.children += focusHL
   highlights.children += areaHL
   //initialize branches of userInterface
-  val menuUI = Pane()
-  val staticUI = Pane()
-  val infoUI = Pane()
+  private val menuUI = Pane()
+  private val staticUI = Pane()
+  private val infoUI = Pane()
   userInterface.children += menuUI
   userInterface.children += staticUI
   userInterface.children += infoUI
   //add static UI-elements
-  val advanceTurnBtn = AdvanceTurnBtn(mapWidth-300, mapHeight)
-  var gameInfo: GameInfo = GameInfo(mapWidth, 0, game.gameState.actingPlayer)
+  private val advanceTurnBtn = AdvanceTurnBtn(mapWidth-300, mapHeight)
+  private var gameInfo: GameInfo = GameInfo(mapWidth, 0, game.gameState.actingPlayer)
   staticUI.children += advanceTurnBtn
   staticUI.children += gameInfo
 
@@ -102,6 +101,15 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
       if y == maxY then
         areaHL.children += drawHorizontalLine(gridToSceneCoordX(coords), gridToSceneCoordY(coords) + tileSize - lineWidth)
 
+  //updates color of area lines according to controller of the area
+  def updateLines() =
+    for area <- game.gameLevel.areas do
+      val controlColor =
+        area.controller match
+          case Some(player: Player) => player.color
+          case None => Gray
+      outlineArea(area.tiles.map(_.coords), controlColor)
+
   //refreshes all troop imageView-objects
   def refreshTroopImages() =
     troops.children.clear()
@@ -114,15 +122,6 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
       imageView.setY(gridToSceneCoordY(troop.gridCoords))
       troop.imageViewIndex = troops.children.size //saves troop's imageView-index
       troops.children += imageView
-
-  //updates color of area lines according to controller of the area
-  def updateLines() =
-    for area <- game.gameLevel.areas do
-      val controlColor =
-        area.controller match
-          case Some(player: Player) => player.color
-          case None => Gray
-      outlineArea(area.tiles.map(_.coords), controlColor)
 
   def createTroop(troop: Troop) =
     troop.initializeStats()
@@ -150,7 +149,7 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
     for troop <- game.gameLevel.troops do
       createTroop(troop)
 
-    //render houses to areas
+    //render building to areas
     for area <- game.gameLevel.areas do
       //choose tile randomly
       val tile = area.tiles(Random.nextInt(area.tiles.size-1))
@@ -165,6 +164,8 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
     updateLines()
   end renderGameLevel
 
+  //stores current action
+  private var currentAction: Action = NoFocus()
   //listens for mouse clicks and then does things according to the mouse position and what is current action
   def handleInput() =
     root.onMouseClicked = event => {
@@ -175,7 +176,7 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
           val gridCoords = sceneToGridCoords(event.getX, event.getY)
           val clickedTile = game.gameLevel.tileAt(gridCoords)
 
-          game.currentAction match
+          currentAction match
             //makes clicked tile the focus
             case NoFocus() | TileFocus(_) =>
               focusHL.children.clear()
@@ -191,7 +192,7 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
               if clickedTroop.nonEmpty then
                 infoUI.children += TroopInfo(0, mapHeight, clickedTroop.get)
                 if !actingPlayer.isCPU && !clickedTroop.get.exhausted && clickedTroop.get.controller == actingPlayer then
-                  game.currentAction = TroopFocus(clickedTile)
+                  currentAction = TroopFocus(clickedTile)
                   if clickedTroop.get.hasMoved then
                     addPopUp(TroopAttackMenu)
                   else
@@ -202,9 +203,9 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
                   case Some(base: Base) =>
                     if !actingPlayer.isCPU && base.controller.contains(actingPlayer) then
                       addPopUp(BuildMenu)
-                      game.currentAction = BuildTroop(clickedTile)
-                    else game.currentAction = TileFocus(clickedTile)
-                  case _ => game.currentAction = TileFocus(clickedTile)
+                      currentAction = BuildTroop(clickedTile)
+                    else currentAction = TileFocus(clickedTile)
+                  case _ => currentAction = TileFocus(clickedTile)
 
             //changes current action based on what menu element was clicked
             case TroopFocus(activeTile) =>
@@ -213,17 +214,17 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
                 if activeTroop.hasMoved then
                   TroopAttackMenu
                 else TroopMenu
-              currentUI.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
+              currentUI.menuElements.find(_.tryClick((event.getX, event.getY))) match
                 case Some(menuElement) =>
                   menuUI.children.clear()
                   menuElement.name match
                     case "Move" =>
-                      game.currentAction = Moving(activeTile)
+                      currentAction = Moving(activeTile)
                       troopMoveRange(activeTroop).filter(_ != activeTile).foreach(a =>
                         val highlightColor = if a.isPassable then LightBlue else Red
                         highlightTile(a.coords, highlightColor))
                     case "Attack" =>
-                      game.currentAction = Attacking(activeTile)
+                      currentAction = Attacking(activeTile)
                       //highlight attack range red and enemy troops in range blue
                       for coord <- troopAttackRange(activeTroop) do
                         val tile = game.gameLevel.tileAt(coord)
@@ -257,25 +258,28 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
               removeFocus()
 
             case BuildTroop(activeTile) =>
-              BuildMenu.menuElements.find(_.tryClickMenuElement((event.getX, event.getY))) match
+              BuildMenu.menuElements.find(_.tryClick((event.getX, event.getY))) match
                 case Some(menuElement) =>
                   buildTroop(menuElement.name, actingPlayer, activeTile)
                   removeFocus()
                 case None => removeFocus()
         else
           //check if advance turn was clicked
-          if advanceTurnBtn.menuElements.exists(_.tryClickMenuElement((event.getX, event.getY))) then
+          if advanceTurnBtn.menuElements.exists(_.tryClick((event.getX, event.getY))) then
             removeFocus()
-            actingPlayer.cpu match
-              case Some(ai) => computerAct(ai)
+            if !actingPlayer.isCPU then
+              advanceTurn()
+            game.gameState.actingPlayer.cpu match
+              case Some(ai) =>
+                computerAct(ai)
+                advanceTurn()
               case None =>
-            advanceTurn()
       }
     def removeFocus() =
       focusHL.children.clear()
       menuUI.children.clear()
       infoUI.children.clear()
-      game.currentAction = NoFocus()
+      currentAction = NoFocus()
 
     def addPopUp(menu: Menu) =
       menuUI.children.clear()
@@ -304,12 +308,13 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
         createTroop(troop)
   end handleInput
 
+  //advances turn and makes all relevant things for advancing turn
   def advanceTurn() =
     game.gameState.advanceTurn()
     gameInfo.updateTurn(game.gameState.actingPlayer.toString)
     updateLines()
     game.gameState.winner match
-      case Some(winner) => gameEnd(winner)
+      case Some(winner) => gameEndScreen(winner)
       case None =>
 
   //renders troop's position change
@@ -322,6 +327,7 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
     game.gameLevel.removeTroop(troop)
     refreshTroopImages()
 
+  //given AI-player does it's turn
   def computerAct(ai: AI) =
     //build troops
     ai.updateTroops()
@@ -342,7 +348,8 @@ class GameScene(root: Pane, game: Game, winWidth: Double, winHeight: Double) ext
         case None =>
     ai.updateWeights()
 
-  def gameEnd(winner: Player) =
+  //displays game-end screen with given winner
+  def gameEndScreen(winner: Player) =
     val bg = new Rectangle:
       width = winWidth
       height = winHeight

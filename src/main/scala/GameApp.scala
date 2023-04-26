@@ -12,13 +12,12 @@ import scala.concurrent.Future
 import java.awt.*
 import java.awt.Dimension
 import javafx.scene.layout.StackPane
-
 import concurrent.ExecutionContext.Implicits.global
 
 object GameApp extends JFXApp3:
-  val fileManager = FileManager()
-  var loadedGame: Option[Game] = None
-  val screenSize: Dimension = Toolkit.getDefaultToolkit.getScreenSize
+  private val fileManager = FileManager()
+  private var loadedGame: Option[Game] = None
+  private val screenSize: Dimension = Toolkit.getDefaultToolkit.getScreenSize
   //save game when closing GameApp
   override def stopApp() =
     if loadedGame.nonEmpty then
@@ -42,6 +41,7 @@ object GameApp extends JFXApp3:
     val stack = StackPane(loadingText)
     val loadingScreen = Scene(stack, Black)
 
+    //starts game
     def startGame(fileName: String) =
         val tileRes = 24
         val tileInfoArea = 48
@@ -78,10 +78,10 @@ object GameApp extends JFXApp3:
           def isCPU(player: Player) =
             players.playerOrCPU(player).getText == "CPU"
 
-          players.menuElements.zipWithIndex.find(_._1.tryClickMenuElement((x,y))) match
+          players.menuElements.zipWithIndex.find(_._1.tryClick((x,y))) match
             case Some(menuElement) => if menuElement._2 == 0 then players.change(RedPlayer) else players.change(BluePlayer)
             case None =>
-              if startGameBtn.menuElements.exists(_.tryClickMenuElement((x, y))) then
+              if startGameBtn.menuElements.exists(_.tryClick((x, y))) then
                 val file = "newGame_1.xml"
                 fileManager.setPlayersControl(file, isCPU(RedPlayer), isCPU(BluePlayer))
                 startGame(file)
@@ -102,7 +102,7 @@ object GameApp extends JFXApp3:
         root_menu.onMouseClicked = event => {
           val x = event.getX
           val y = event.getY
-          mainMenu.menuElements.find(_.tryClickMenuElement((x, y))) match
+          mainMenu.menuElements.find(_.tryClick((x, y))) match
             case Some(menuElement) => menuElement.name match
               case "New Game" => stage.scene = newGameScreen
               case "Load Game" =>

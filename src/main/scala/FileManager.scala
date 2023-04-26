@@ -131,12 +131,13 @@ class FileManager():
         (troopData \\ "hp").text match
           case "full" =>
           case notFull => troop.modifyStat(Stat.Hp, notFull.toInt - troop.hp)
-        (troopData \\ "status").text match
-          case "ready" =>
-          case "moved" => troop.hasMoved = true
-          case "exhausted" => troop.exhausted = true
         //add troop to GameLevel
         gameLevel.addTroop(troop)
+        //set troop status
+        (troopData \\ "status").text match
+          case "ready" => troop.refresh()
+          case "moved" => troop.exhausted = false
+          case "exhausted" =>
 
 
     //get list of tiles according to tile data

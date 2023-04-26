@@ -8,7 +8,7 @@ import Stat.*
 import javafx.scene.layout.StackPane
 
 class MenuElement(val name: String, elementCoords: (Double, Double), width: Int, height: Int):
-  def tryClickMenuElement(clickCoords: (Double, Double)): Boolean =
+  def tryClick(clickCoords: (Double, Double)): Boolean =
     clickCoords._1 >= elementCoords._1 && clickCoords._1 <= elementCoords._1 + width &&
       clickCoords._2 >= elementCoords._2 && clickCoords._2 <= elementCoords._2 + height
 

@@ -6,8 +6,7 @@ class GameState(game: Game):
   def advanceRound() =
     RedPlayer.resources += 1
     BluePlayer.resources += 1
-    game.gameLevel.troops.foreach(_.refresh())
-    game.gameLevel.areas.foreach(_.updateControl())
+    game.gameLevel.roundRefresh()
     checkWinner()
 
   def advanceTurn() =

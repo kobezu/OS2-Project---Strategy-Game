@@ -3,33 +3,33 @@ import scala.collection.mutable.Buffer
 import scala.collection.mutable.Map
 
 class AI(game: Game, val player: Player):
-  var troopCount = 0
-  val gameState = game.gameState
-  val gameLevel = game.gameLevel
-  val enemy = if player == RedPlayer then BluePlayer else RedPlayer
+  private val gameState = game.gameState
+  private val gameLevel = game.gameLevel
+  private val enemy = if player == RedPlayer then BluePlayer else RedPlayer
   //AIs base
-  val base = player match
+  private val base = player match
     case RedPlayer => gameLevel.areas(0)
     case BluePlayer => gameLevel.areas(1)
   //each area mapped to one tile in the area
-  val destinations = gameLevel.areas.map(a => (a, a.tiles(a.tiles.length/2))).toMap
+  private val destinations = gameLevel.areas.map(a => (a, a.tiles(a.tiles.length/2))).toMap
   //routes for each areas with each TroopType
-  val destinationsWithRoutes = Map[TroopType, Map[Area, Vector[Vector[Int]]]](initializeRoutes(TroopType.Human),
+  private val destinationsWithRoutes = Map[TroopType, Map[Area, Vector[Vector[Int]]]](initializeRoutes(TroopType.Human),
     initializeRoutes(TroopType.Vehicle), initializeRoutes(TroopType.Flying))
   //each area with player weights
-  val areaWeights: Map[Area, (Double, Double)] = gameLevel.areas.map(a => (a, weightArea(a))).to(Map)
+  private val areaWeights: Map[Area, (Double, Double)] = gameLevel.areas.map(a => (a, weightArea(a))).to(Map)
   //troop that AI will build next
-  var buildFocus = "Solider"
+  private var buildFocus = "Solider"
   //areas with troops AI has commited there
-  var commitsToAreas: Map[Area, Buffer[Troop]] = gameLevel.areas.map(a => (a, Buffer[Troop]())).to(Map)
+  private var commitsToAreas: Map[Area, Buffer[Troop]] = gameLevel.areas.map(a => (a, Buffer[Troop]())).to(Map)
   //troops that are not commited to any area
-  val uncommitedTroops = ownTroops.toBuffer
+  private val uncommitedTroops = ownTroops.toBuffer
   //maps troop to the area it's commited
-  val troopsWithCommits: Map[Troop, Option[Area]] = ownTroops.map(a => (a, None)).to(Map)
+  private val troopsWithCommits: Map[Troop, Option[Area]] = ownTroops.map(a => (a, None)).to(Map)
 
   def ownTroops = gameLevel.playerTroops(player)
   def enemyTroops = gameLevel.playerTroops(enemy)
 
+  //method used for initializing routes to areas
   def initializeRoutes(troopType: TroopType) =
     val routes = Map[Area, Vector[Vector[Int]]]()
     for item <- destinations do
@@ -188,9 +188,6 @@ class AI(game: Game, val player: Player):
       troopsWithCommits += troop -> None
       builtTroop = buildTroop()
     uncommitedTroops ++= builtTroops
-    builtTroops
-
-
 
 end AI
 

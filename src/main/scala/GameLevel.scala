@@ -5,8 +5,8 @@ import scala.collection.mutable.Buffer
 class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
   var troopCount = 0
   val troops = Buffer[Troop]()
-  var redTroops = Vector[Troop]()
-  var blueTroops = Vector[Troop]()
+  private var redTroops = Vector[Troop]()
+  private var blueTroops = Vector[Troop]()
   val areas = Buffer[Area]()
 
   def gridWidth: Int = tileGrid(0).size
@@ -51,13 +51,16 @@ class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
   //returns the Tile-object at given grid-coordinates
   def tileAt(coords: (Int, Int)): Tile = tileGrid(coords._2)(coords._1)
 
+  //adds troop to troops
   def addTroop(troop: Troop) =
+    troop.exhaust()
     troop.controller match
       case RedPlayer => redTroops = redTroops ++ Vector(troop)
       case BluePlayer => blueTroops = blueTroops ++ Vector(troop)
     troops += troop
     troopCount += 1
 
+  //removes troop from troops
   def removeTroop(troop: Troop) =
     troop.controller match
       case RedPlayer => redTroops = redTroops.filterNot(_ == troop)
@@ -65,10 +68,16 @@ class GameLevel(val tileGrid: Vector[Vector[(Tile)]]):
     troops -= troop
     troop.currentTile.removeTroop()
 
+  //returns givem player troops
   def playerTroops(player: Player) =
     player match
       case RedPlayer => redTroops
       case BluePlayer => blueTroops
+      
+  //refreshes troops and updates areas
+  def roundRefresh() =
+    troops.foreach(_.refresh())
+    areas.foreach(_.updateControl())
 
   //only used by AI
   //counts movement cost for moving from each tile from given tile
