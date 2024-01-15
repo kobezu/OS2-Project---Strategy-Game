@@ -16,7 +16,7 @@ When you click a tile in your base, a troop-build menu pops up. You can build a 
 \
 **3.	Program structure**
 
-![Alt text](image.png)
+![Alt text](uml.png)
 
 **Game:**\
 The program has Game-class which stores GameLevel and GameState which contain all information about the game. 
